@@ -1,0 +1,9 @@
+ASVConfig
+1st constructor (double[] coords), coords means position in list
+
+Tester
+getMinimumArea	can use to check convex
+
+addToAll		add delta distance to  a copy of list
+
+testConvexity
