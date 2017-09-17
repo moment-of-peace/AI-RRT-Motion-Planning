@@ -1,0 +1,18 @@
+测试机器人所围成的面积是否满足最小值
+    testAreas: 用于输出测试结果，错误信息
+    getInvalidAreaStates: 对路径内每一个config遍历测试
+    hasEnoughArea: 测试一个config围成的面积
+
+测试机器人是否在workspace内部
+    testBounds: 输出测试信息
+    getOutOfBoundStates: 遍历每个config进行测试
+    fitsBounds: 遍历一个config的所有点，测试是否在workspace内
+
+测试机器人任一节点是否与任何障碍冲突
+    testCollisions: 输出测试信息
+    getCollidingStates: 遍历全部config
+    hasCollision (1): 对一个config，遍历全部障碍
+    hasCollision (2): 对一个障碍，遍历一个config里的全部边，测试是否冲突
+
+测试输出文件中cost是否计算正确
+    testTotalCost
