@@ -22,8 +22,8 @@ public class Main {
 	    pt[1]= randP.nextDouble();
 	    //angle
 	    for(int i = 2; i < dimensions; i++) {
-	        
-	        
+	        Double degree=randP.nextDouble()*Math.PI;
+	        pt[i] = Math.toDegrees(degree);
 	    }
 
 	    return pt;
