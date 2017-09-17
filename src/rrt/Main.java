@@ -333,8 +333,8 @@ public class Main {
 		for (int i=2; i<pts.length;i++){
 			//transfer to angle fit coords, need test
 			double theta=2*pi-prevAngle-pts[i];
-			double x = currentX+broomLength*Math.cos(theta);
-			double y = currentY+broomLength*Math.sin(theta);
+			double x = currentX+MAX_BOOM_LENGTH*Math.cos(theta);
+			double y = currentY+MAX_BOOM_LENGTH*Math.sin(theta);
 			cfgArray[j]=x;
 			cfgArray[j+1]=y;
 			j+=2;
