@@ -4,11 +4,15 @@ package rrt;
  */
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Random;
+
+import problem.ASVConfig;
 import problem.ProblemSpec;
+import tester.Tester;
 
 public class Main {
-    final double broomLength = 0.05;
+    public final static double broomLength = 0.05;
     final double step = 0.001;
     
 	public static void main(String[] args) throws IOException {
@@ -21,37 +25,67 @@ public class Main {
 	    int dimensions = asvCount + 2; // dimension degree of c space
 	    
 	    for (int i = 0; i < 1000; i++) {
-	        double[] pt = get_random_point(dimensions);
-
+	        double[] pts = get_random_point(dimensions);
+	        double[] coords=cfgToWSpace(pts);
+	        ASVConfig cfg=  new ASVConfig(coords);
+	        	        
 	    }
-		double[] pt = get_random_point(dimensions);
-		for (double p:pt){
-			System.out.println(p);
-		}
-		
-		
 	}
-	
+	/**
+	 * Get random C-state with 2 start coords and n-1 angle;
+	 * @param dimensions = point.number+2
+	 * @return array of C-state
+	 */
 	public static double[] get_random_point(int dimensions)
 	{
-	    double[] pt = new double[dimensions];
+	    double[] pts = new double[dimensions];
 	    Random randP = new Random();
 	    //start position
-	    pt[0]= randP.nextDouble();
-	    pt[1]= randP.nextDouble();
-	    pt[2]= randP.nextDouble()*2*Math.PI-Math.PI;
+	    pts[0]= randP.nextDouble();
+	    pts[1]= randP.nextDouble();
+	    pts[2]= randP.nextDouble()*2*Math.PI-Math.PI;
 	    //angle
 	    for(int i = 3; i < dimensions; i++) {
 	        Double degree=randP.nextDouble()*Math.PI;
-	        pt[i] = Math.toDegrees(degree);
+	        pts[i] = Math.toDegrees(degree);
 	    }
-	    return pt;
+	    return pts;
+	}
+	/**
+	 * return array of coords in work space where i%2=>y,i+1%2=>x
+	 * @param pts array of C-state
+	 * @return array of coords in work space
+	 */
+	public static double[] cfgToWSpace(double[] pts) {
+		double [] cfgArray= new double[pts.length];
+		double currentX=pts[0];
+		double currentY=pts[1];
+		
+		cfgArray[0]=pts[0];
+		cfgArray[1]=pts[1];
+		int j=2;
+		for (int i=2; i<pts.length;i++){
+			//need test
+			double x = currentX+broomLength*Math.cos(pts[i]);
+			double y = currentY+broomLength*Math.sin(pts[i]);
+			cfgArray[j]=x;
+			cfgArray[j+1]=y;
+			j+=2;
+			currentX=x;
+			currentY=y;
+		}
+		return cfgArray;
 	}
 	
-	public static double[] cfgToWorkspace(double[] pt) {
-		
+	public static boolean cSpaceCollisionCheck(ASVConfig coords){
+		Tester test = new Tester();
+        if(!test.hasValidBoomLengths(coords)||!test.hasEnoughArea(coords)){
+        	//need other test
+        	return false;
+        }
+     
+		return true;
 	}
-
 	/**
 	 * retrieve a configuration which is nearest to the sampled configuration
 	 * @param allConfig: all found configuration
