@@ -286,13 +286,24 @@ public class Main {
 	    
 	    int asvCount = tester.ps.getASVCount();
 	    int dimensions = asvCount + 2; // dimension degree of c space
+	    int count=0;
+	    int all=0;
+	    
+	    
 	    
 	    for (int i = 0; i < 1000; i++) {
 	        double[] pts = get_random_point(dimensions);
 	        double[] coords=cfgToWSpace(pts);
 	        ASVConfig cfg=  new ASVConfig(coords);
-	        	        
+	        if (cSpaceCollisionCheck(cfg,tester)){
+	        	count++;
+	        	all++;
+	        }else{
+	        	all++;
+	        }
 	    }
+	    System.out.println(count);
+	    System.out.println(all);
 	}
 	/**
 	 * Get random C-state with 2 start coords and n-1 angle;
@@ -309,8 +320,7 @@ public class Main {
 	    pts[2]= randP.nextDouble()*2*Math.PI-Math.PI;
 	    //angle
 	    for(int i = 3; i < dimensions; i++) {
-	        Double degree=randP.nextDouble()*Math.PI;
-	        pts[i] = Math.toDegrees(degree);
+	        pts[i] = randP.nextDouble()*Math.PI;
 	    }
 	    return pts;
 	}
@@ -321,7 +331,7 @@ public class Main {
 	 * @return array of coords in work space
 	 */
 	public static double[] cfgToWSpace(double[] pts) {
-		double [] cfgArray= new double[pts.length];
+		double [] cfgArray= new double[2*(pts.length-1)];
 		double currentX=pts[0];
 		double currentY=pts[1];
 		double pi=Math.PI;
@@ -346,8 +356,10 @@ public class Main {
 		return cfgArray;
 	}
 	
-	public static boolean cSpaceCollisionCheck(ASVConfig coords, Main test){
-        if(!test.hasValidBoomLengths(coords)||!test.hasEnoughArea(coords)){
+	public static boolean cSpaceCollisionCheck(ASVConfig cfg, Main test){
+        if(!test.hasValidBoomLengths(cfg)||!test.hasEnoughArea(cfg)||
+        		!test.isConvex(cfg)||!test.fitsBounds(cfg)||
+        		!test.hasCollision(cfg, test.ps.getObstacles())){
         	//need other test
         	return false;
         }
