@@ -1,5 +1,7 @@
 package rrt;
-
+/**
+ * motion planning using bidirectional rapidly exploring random tree
+ */
 import java.io.IOException;
 import java.util.Random;
 import problem.ProblemSpec;
