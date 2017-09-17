@@ -9,6 +9,7 @@ import problem.ProblemSpec;
 public class Main {
 
 	public static void main(String[] args) throws IOException {
+		final double broomLength=0.05;
 		// load problem from a file
 	    String fileName = args[0];
 	    ProblemSpec problem = new ProblemSpec();
