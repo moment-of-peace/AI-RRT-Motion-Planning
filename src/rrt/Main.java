@@ -86,13 +86,62 @@ public class Main {
     }
     
     /**
-     * 
+     * find the next vertex to extend the tree towards to the sample
      * @param sample: the sampled configuration
      * @param near: nearest configuration to the sample
      * @return: expanded configuration towards the sample from nearest
      */
     public static Config findNext(Config sample, Config near) {
-        return null;
+        Config start = near;
+        Config result = sample;
+        
+        // extend towards the sample as far as possible
+        while (true) {
+            while (distOverflow(start, result)) {
+                // scale down, if the next configuration exceeds the step limitation
+                result = cutDist(start, result);
+            }
+            // if the next configuration touches collision space, break loop
+            if (!testConfig(result)) {
+                return start;
+            } else {
+                start = result;
+                result = sample;
+            }
+        }
+    }
+
+    /**
+     * scale down the distance by a fixed factor
+     * @param start
+     * @param end
+     * @return
+     */
+    private static Config cutDist(Config start, Config end) {
+        double[] coords1 = start.coords;
+        double[] coords2 = end.coords;
+        double[] result = new double[coords1.length];
+        // scale down
+        for (int i = 0; i < coords1.length; i++) {
+            result[i] = 0.75 * coords1[i] + coords2[i];
+        }
+        return new Config(result);
+    }
+
+    /**
+     * test whether two configurations meet the step size restriction
+     */
+    private static boolean distOverflow(Config start, Config end) {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    /**
+     * test whether a configuration is valid
+     */
+    private static boolean testConfig(Config result) {
+        // TODO Auto-generated method stub
+        return false;
     }
 }
 
