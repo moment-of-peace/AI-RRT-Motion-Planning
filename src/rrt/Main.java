@@ -1,16 +1,30 @@
 package rrt;
 
+import java.io.IOException;
 import java.util.Random;
+import problem.ProblemSpec;
 
 public class Main {
 
-	public static void main(String[] args) {
-		// TODO Auto-generated method stub
-		int dimensions = Integer.parseInt(args[0]);
+	public static void main(String[] args) throws IOException {
+		// load problem from a file
+	    String fileName = args[0];
+	    ProblemSpec problem = new ProblemSpec();
+	    problem.loadProblem(fileName);
+	    
+	    int asvCount = problem.getASVCount();
+	    int dimensions = asvCount + 2; // dimension degree of c space
+	    
+	    for (int i = 0; i < 1000; i++) {
+	        double[] pt = get_random_point(dimensions);
+
+	    }
 		double[] pt = get_random_point(dimensions);
 		for (double p:pt){
 			System.out.println(p);
 		}
+		
+		
 	}
 	
 	public static double[] get_random_point(int dimensions)
