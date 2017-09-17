@@ -324,19 +324,24 @@ public class Main {
 		double [] cfgArray= new double[pts.length];
 		double currentX=pts[0];
 		double currentY=pts[1];
-		
+		double pi=Math.PI;
+		double prevAngle=pi;
 		cfgArray[0]=pts[0];
 		cfgArray[1]=pts[1];
 		int j=2;
+		
 		for (int i=2; i<pts.length;i++){
-			//need test
-			double x = currentX+MAX_BOOM_LENGTH*Math.cos(pts[i]);
-			double y = currentY+MAX_BOOM_LENGTH*Math.sin(pts[i]);
+			//transfer to angle fit coords, need test
+			double theta=2*pi-prevAngle-pts[i];
+			double x = currentX+broomLength*Math.cos(theta);
+			double y = currentY+broomLength*Math.sin(theta);
 			cfgArray[j]=x;
 			cfgArray[j+1]=y;
 			j+=2;
+			//update current point
 			currentX=x;
 			currentY=y;
+			prevAngle=pi-theta;
 		}
 		return cfgArray;
 	}
