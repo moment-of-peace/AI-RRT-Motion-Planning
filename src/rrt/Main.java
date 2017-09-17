@@ -3,6 +3,7 @@ package rrt;
  * motion planning using bidirectional rapidly exploring random tree
  */
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.Random;
 import problem.ProblemSpec;
 
@@ -49,6 +50,15 @@ public class Main {
 		
 	}
 
-
+	public static Config findNearest(HashSet<Config> allConfig, Config target) {
+	    Config result = null;
+	    double dist = Double.POSITIVE_INFINITY;
+	    double newDist;
+	    
+	    for (Config c: allConfig) {
+	        newDist = getDist(c.coord)
+	    }
+	    return null;
+	}
 }
 
