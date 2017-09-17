@@ -1,0 +1,78 @@
+//cfg configuration
+
+
+
+
+grow(Rectangle2D rect, double delta)
+Creates a new Rectangle2D that is grown by delta in each direction
+长方形（障碍物）的每个方向上扩张delta
+
+
+Tester(double maxError)
+Creates a Tester with the given maximum error.
+按maxError扩张障碍物
+
+
+testInitialFirst(int testNo, boolean verbose)
+检查起始点
+		hasInitialFirst()
+		检查起始点有无 以及通过getPath().get(0)和getInitialState得到的起始点 maxDistance是否 <= maxError
+
+
+testGoalLast(int testNo, boolean verbose)
+检查目标点
+		hasGoalLast()
+		同Initial
+
+
+addToAll(List<Integer> list, int delta)
+Returns a copy of list where each value is incremented by delta.
+
+
+testValidSteps(int testNo, boolean verbose)
+报错
+Checks that the steps in between configurations do not exceed the maximum primitive step distance.
+		getInvalidSteps()
+		检查一列表cfg的单位步长（ primitive step distance）
+		Returns the preceding path indices of any invalid steps.
+				isValidStep()
+				Returns whether the step from s0 to s1 is a valid primitive step.
+				检查单步
+
+
+testBoomLengths(int testNo, boolean verbose)
+报错
+		getInvalidBoomStates()
+		检查一列表cfg的刷子长度
+				hasValidBoomLengths(ASVConfig cfg)
+				检查单个刷子长度
+
+
+testConvexity(int testNo, boolean verbose)
+报错
+		getNonConvexStates()
+		检查一列表cfg是否凸型
+				isConvex(ASVConfig cfg)
+				检查单个凹凸性
+				turnSign=转角正负性
+				requireSign？
+
+★★★				double angle = Math.atan2(p1.getY() - p0.getY(), p1.getX() - p0.getX())
+				计算角度
+
+
+normaliseAngle(double angle)
+Normalises an angle to the range (-pi, pi]
+标准化角度至(-π,π]
+
+
+testAreas(int testNo, boolean verbose)
+Checks whether each configuration has sufficient internal area.
+报错
+		getInvalidAreaStates()
+		检查一列表cfg是否有足够的面积
+				hasEnoughArea(ASVConfig cfg)
+				和minimumArea作比较
+						getMinimumArea(int asvCount)
+						use asvCount(int asvCount)=asvPositions.size() calculate permitted minimumArea
+						检测最小面积
