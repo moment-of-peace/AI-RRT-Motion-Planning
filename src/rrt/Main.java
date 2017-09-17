@@ -20,13 +20,17 @@ public class Main {
 	    //start position
 	    pt[0]= randP.nextDouble();
 	    pt[1]= randP.nextDouble();
+	    pt[2]= randP.nextDouble()*2*Math.PI-Math.PI;
 	    //angle
-	    for(int i = 2; i < dimensions; i++) {
+	    for(int i = 3; i < dimensions; i++) {
 	        Double degree=randP.nextDouble()*Math.PI;
 	        pt[i] = Math.toDegrees(degree);
 	    }
-
 	    return pt;
+	}
+	
+	public static double[] cfgToWorkspace(double[] pt) {
+		
 	}
 
 
