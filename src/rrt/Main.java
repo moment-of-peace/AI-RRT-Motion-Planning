@@ -287,12 +287,38 @@ public class Main {
 	    int asvCount = tester.ps.getASVCount();
 	    int dimensions = asvCount + 2; // dimension degree of c space
 	    
+	    // HashSets used to store found configurations in cspace from init and goal sides
+	    HashSet<Config> fromInit = new HashSet<Config>();
+	    HashSet<Config> fromGoal = new HashSet<Config>();
+	    
 	    // get initial and goal coordinates in c space
 	    Config initConfig = toConfig(tester.ps.getInitialState());
 	    Config goalConfig = toConfig(tester.ps.getGoalState());
+	    fromInit.add(initConfig);
+	    fromGoal.add(goalConfig);
 	    
 	    double[] angleRange = getAngleRange(initConfig, goalConfig);
 	    
+	    // extend tree from both initial and goal point
+	    Config initNext = initConfig;
+	    Config goalNext = goalConfig;
+	    
+	    Config sample, nearest1, nearest2;
+	    int total = 0;
+	    while (!initNext.equals(goalNext)) {
+	        total++;
+	        sample = get_random_point(dimensions);
+	        // find nearest configurations from both sides
+	        nearest1 = findNearest(fromInit, sample);
+	        nearest2 = findNearest(fromGoal, sample);
+	        // get the next configurations for both sides
+	        initNext = findNext(sample, nearest1);
+	        goalNext = findNext(sample, nearest2);
+	        initNext.predecessor = nearest1;
+	        goalNext.predecessor = nearest2;
+	    }
+	    System.out.println("finished, total configs: " + total);
+	    /*
 	    int[] sampleResult = {0,0,0,0,0};
 	    for (int i = 0; i < 1000000; i++) {
 	        Config cfg = get_random_point(dimensions);
@@ -303,6 +329,7 @@ public class Main {
 	    for (int n: sampleResult) {
 	        System.out.println(n);
 	    }
+	    */
 	}
 	
 	/**
@@ -317,7 +344,7 @@ public class Main {
 	    double[] angleRange = new double[initCoords.length-3];
 	    
 	    for (int i = 0; i < angleRange.length; i++) {
-	        angleRange[i] = (initCoords[i+3]>goalCoords[i+3]?initCoords[i+3]:goalCoords[i+3]);
+	        angleRange[i] = (initCoords[i+3]<goalCoords[i+3]?initCoords[i+3]:goalCoords[i+3]);
 	    }
         return angleRange;
     }
