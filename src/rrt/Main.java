@@ -288,7 +288,7 @@ public class Main {
 	    int dimensions = asvCount + 2; // dimension degree of c space
 	    
 	    int[] sampleResult = {0,0,0,0,0};
-	    for (int i = 0; i < 100000; i++) {
+	    for (int i = 0; i < 1000000; i++) {
 	        double[] pts = get_random_point(dimensions);
 	        double[] coords=cfgToWSpace(pts);
 	        ASVConfig cfg=  new ASVConfig(coords);
