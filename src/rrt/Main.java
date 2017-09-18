@@ -286,24 +286,17 @@ public class Main {
 	    
 	    int asvCount = tester.ps.getASVCount();
 	    int dimensions = asvCount + 2; // dimension degree of c space
-	    int count=0;
-	    int all=0;
 	    
-	    
-	    
-	    for (int i = 0; i < 1000; i++) {
+	    int[] sampleResult = {0,0,0,0,0};
+	    for (int i = 0; i < 100000; i++) {
 	        double[] pts = get_random_point(dimensions);
 	        double[] coords=cfgToWSpace(pts);
 	        ASVConfig cfg=  new ASVConfig(coords);
-	        if (cSpaceCollisionCheck(cfg,tester)){
-	        	count++;
-	        	all++;
-	        }else{
-	        	all++;
-	        }
+	        cSpaceCollisionCheck(cfg,tester, sampleResult);
 	    }
-	    System.out.println(count);
-	    System.out.println(all);
+	    for (int n: sampleResult) {
+	        System.out.println(n);
+	    }
 	}
 	/**
 	 * Get random C-state with 2 start coords and n-1 angle;
@@ -319,8 +312,11 @@ public class Main {
 	    pts[1]= randP.nextDouble();
 	    pts[2]= randP.nextDouble()*2*Math.PI-Math.PI;
 	    //angle
+	    double extAngleSum = 0;
+	    double intAngleSum = 0;
+	    double limit = 0;
 	    for(int i = 3; i < dimensions; i++) {
-	        pts[i] = randP.nextDouble()*Math.PI;
+	        pts[i] = randP.nextDouble()*0.14*Math.PI+0.86*Math.PI;
 	    }
 	    return pts;
 	}
@@ -331,41 +327,54 @@ public class Main {
 	 * @return array of coords in work space
 	 */
 	public static double[] cfgToWSpace(double[] pts) {
-		double [] cfgArray= new double[2*(pts.length-1)];
+		double [] cfgArray= new double[2*(pts.length-2)];
 		double currentX=pts[0];
 		double currentY=pts[1];
 		double pi=Math.PI;
-		double prevAngle=pi;
+		double prevAngle=pts[2];
 		cfgArray[0]=pts[0];
 		cfgArray[1]=pts[1];
-		int j=2;
+		int j=1;
 		
-		for (int i=2; i<pts.length;i++){
+		for (int i=3; i<pts.length;i++){
 			//transfer to angle fit coords, need test
-			double theta=2*pi-prevAngle-pts[i];
+			double theta=pi+prevAngle-pts[i];
 			double x = currentX+MAX_BOOM_LENGTH*Math.cos(theta);
 			double y = currentY+MAX_BOOM_LENGTH*Math.sin(theta);
-			cfgArray[j]=x;
-			cfgArray[j+1]=y;
-			j+=2;
+			cfgArray[2*j]=x;
+			cfgArray[2*j+1]=y;
+			j++;
 			//update current point
 			currentX=x;
 			currentY=y;
-			prevAngle=pi-theta;
+			prevAngle=theta;
 		}
 		return cfgArray;
 	}
 	
-	public static boolean cSpaceCollisionCheck(ASVConfig cfg, Main test){
-        if(!test.hasValidBoomLengths(cfg)||!test.hasEnoughArea(cfg)||
-        		!test.isConvex(cfg)||!test.fitsBounds(cfg)||
-        		!test.hasCollision(cfg, test.ps.getObstacles())){
+	public static void cSpaceCollisionCheck(ASVConfig cfg, Main test, int[] sampleResult){
+        boolean flag = true;
+	    if(!test.hasEnoughArea(cfg)){
         	//need other test
-        	return false;
+        	sampleResult[1]++;
+        	flag = false;
+        } 
+        if (!test.isConvex(cfg)) {
+            sampleResult[2]++;
+            flag = false;
+        } 
+        if (!test.fitsBounds(cfg)) {
+            sampleResult[3]++;
+            flag = false;
+        } 
+        if (!test.hasCollision(cfg, test.ps.getObstacles())) {
+            sampleResult[4]++;
+            flag = false;
         }
-     
-		return true;
-	}
+        if (flag) {
+            sampleResult[0]++;
+        }
+ 	}
 	/**
 	 * retrieve a configuration which is nearest to the sampled configuration
 	 * @param allConfig: all found configuration
