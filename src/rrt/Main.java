@@ -285,7 +285,7 @@ public class Main {
 	    tester.ps.loadProblem(fileName);
 	    
 	    int asvCount = tester.ps.getASVCount();
-	    int dimensions = asvCount + 2; // dimension degree of c space
+	    int dimensions = asvCount + 1; // dimension degree of c space
 	    
 	    // HashSets used to store found configurations in cspace from init and goal sides
 	    HashSet<Config> fromInit = new HashSet<Config>();
@@ -294,6 +294,15 @@ public class Main {
 	    // get initial and goal coordinates in c space
 	    Config initConfig = toConfig(tester.ps.getInitialState());
 	    Config goalConfig = toConfig(tester.ps.getGoalState());
+	    /*
+	    for (double d:initConfig.coords){
+	    	System.out.println(d);
+	    }
+	    System.out.println("");
+	    for (double d:goalConfig.coords){
+	    	System.out.println(d);
+	    }
+	    */
 	    // add initial and goal into hashsets
 	    fromInit.add(initConfig);
 	    fromGoal.add(goalConfig);
@@ -333,7 +342,7 @@ public class Main {
 	        cSpaceCollisionCheck(asvC,tester, sampleResult);
 	    }
 	    for (int n: sampleResult) {
-	        System.out.println(n);
+	        //System.out.println(n);
 	    }
 	    */
 	}
@@ -361,17 +370,18 @@ public class Main {
 	private static Config toConfig(ASVConfig initialState) {
         // TODO Auto-generated method stub
 		List<Point2D> positions = initialState.getASVPositions();
-		double [] pts = new double [initialState.getASVCount()];
+		//length
+		double [] pts = new double [initialState.getASVCount()+1];
 		Point2D p0= positions.get(0);
 		pts[0]=p0.getX();
 		pts[1]=p0.getY();
 		
-		for (int i=0;i<positions.size();i++){
-			p0= positions.get(i);
-			Point2D p1 = positions.get(i+1);
+		for (int i=1;i<positions.size();i++){
+			Point2D p1 = positions.get(i);
             double nextAngle = Math.atan2(p1.getY() - p0.getY(),
                     p1.getX() - p0.getX());
-            pts[i+2]=nextAngle;		
+            pts[i+1]=nextAngle;
+            p0=p1;
 		}
 		Config cfg = new Config(pts);
         return cfg;
@@ -408,7 +418,7 @@ public class Main {
 	public static ASVConfig cfgToWSpace(Config cfg) {
 		double[] pts = cfg.coords;
 		
-		double [] cfgArray= new double[2*(pts.length-2)];
+		double [] cfgArray= new double[2*(pts.length-1)];
 		double currentX=pts[0];
 		double currentY=pts[1];
 		double pi=Math.PI;
