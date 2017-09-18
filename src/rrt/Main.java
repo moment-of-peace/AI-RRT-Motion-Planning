@@ -27,7 +27,8 @@ public class Main {
     private static final Rectangle2D BOUNDS = new Rectangle2D.Double(0, 0, 1, 1);
     /** The default value for maximum error */
     private static final double DEFAULT_MAX_ERROR = 1e-5;
-
+    
+    private static final double PI=Math.PI;
     /**
      * Returns the minimum area required for the given number of ASVs.
      *
@@ -285,7 +286,7 @@ public class Main {
 	    tester.ps.loadProblem(fileName);
 	    
 	    int asvCount = tester.ps.getASVCount();
-	    int dimensions = asvCount + 2; // dimension degree of c space
+	    int dimensions = asvCount + 1; // dimension degree of c space
 	    
 	    // HashSets used to store found configurations in cspace from init and goal sides
 	    HashSet<Config> fromInit = new HashSet<Config>();
@@ -294,7 +295,18 @@ public class Main {
 	    // get initial and goal coordinates in c space
 	    Config initConfig = toConfig(tester.ps.getInitialState());
 	    Config goalConfig = toConfig(tester.ps.getGoalState());
+	    /*
+	    for (double d:initConfig.coords){
+	    	System.out.println(d);
+	    }
+	    System.out.println("");
+	    for (double d:goalConfig.coords){
+	    	System.out.println(d);
+	    }
+	    */
 	    // add initial and goal into hashsets
+	    
+	    
 	    fromInit.add(initConfig);
 	    fromGoal.add(goalConfig);
 	    
@@ -324,6 +336,8 @@ public class Main {
 	        goalNext.predecessor = nearest2;
 	    }
 	    System.out.println("finished, total configs: " + total);
+	    
+	    
 	    /*
 	    int[] sampleResult = {0,0,0,0,0};
 	    for (int i = 0; i < 1000000; i++) {
@@ -333,7 +347,7 @@ public class Main {
 	        cSpaceCollisionCheck(asvC,tester, sampleResult);
 	    }
 	    for (int n: sampleResult) {
-	        System.out.println(n);
+	        //System.out.println(n);
 	    }
 	    */
 	}
@@ -361,17 +375,20 @@ public class Main {
 	private static Config toConfig(ASVConfig initialState) {
         // TODO Auto-generated method stub
 		List<Point2D> positions = initialState.getASVPositions();
-		double [] pts = new double [initialState.getASVCount()];
+		//length
+		double [] pts = new double [initialState.getASVCount()+1];
 		Point2D p0= positions.get(0);
 		pts[0]=p0.getX();
 		pts[1]=p0.getY();
-		
-		for (int i=0;i<positions.size();i++){
-			p0= positions.get(i);
-			Point2D p1 = positions.get(i+1);
-            double nextAngle = Math.atan2(p1.getY() - p0.getY(),
+		double prevAngle=PI;
+		for (int i=1;i<positions.size();i++){
+			Point2D p1 = positions.get(i);
+            double currentAngle = Math.atan2(p1.getY() - p0.getY(),
                     p1.getX() - p0.getX());
-            pts[i+2]=nextAngle;		
+            
+            pts[i+1]=2*PI-prevAngle-currentAngle;
+            prevAngle=PI-currentAngle;
+            p0=p1;
 		}
 		Config cfg = new Config(pts);
         return cfg;
@@ -390,11 +407,11 @@ public class Main {
 	    //start position
 	    pts[0]= randP.nextDouble();
 	    pts[1]= randP.nextDouble();
-	    pts[2]= randP.nextDouble()*2*Math.PI-Math.PI;
+	    pts[2]= randP.nextDouble()*2*PI-PI;
 	    //angle
 	    for(int i = 3; i < dimensions; i++) {
 	        double limit = angleRange[i-3];
-	        pts[i] = randP.nextDouble()*(1-limit)*Math.PI+limit*Math.PI;
+	        pts[i] = randP.nextDouble()*(1-limit)*PI+limit*PI;
 	    }
 	    Config cfg  = new Config(pts);
 	    return cfg;
@@ -408,10 +425,9 @@ public class Main {
 	public static ASVConfig cfgToWSpace(Config cfg) {
 		double[] pts = cfg.coords;
 		
-		double [] cfgArray= new double[2*(pts.length-2)];
+		double [] cfgArray= new double[2*(pts.length-1)];
 		double currentX=pts[0];
 		double currentY=pts[1];
-		double pi=Math.PI;
 		double prevAngle=pts[2];
 		cfgArray[0]=pts[0];
 		cfgArray[1]=pts[1];
@@ -419,7 +435,7 @@ public class Main {
 		
 		for (int i=3; i<pts.length;i++){
 			//transfer to angle fit coords, need test
-			double theta=pi+prevAngle-pts[i];
+			double theta=PI+prevAngle-pts[i];
 			currentX = currentX+MAX_BOOM_LENGTH*Math.cos(theta);
 			currentY = currentY+MAX_BOOM_LENGTH*Math.sin(theta);
 			cfgArray[2*j]=currentX;
