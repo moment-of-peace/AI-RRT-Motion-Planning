@@ -294,6 +294,7 @@ public class Main {
 	    // get initial and goal coordinates in c space
 	    Config initConfig = toConfig(tester.ps.getInitialState());
 	    Config goalConfig = toConfig(tester.ps.getGoalState());
+	    // add initial and goal into hashsets
 	    fromInit.add(initConfig);
 	    fromGoal.add(goalConfig);
 	    
@@ -307,7 +308,12 @@ public class Main {
 	    int total = 0;
 	    while (!initNext.equals(goalNext)) {
 	        total++;
-	        sample = get_random_point(dimensions);
+	        sample = getRandomPoint(dimensions, angleRange);
+	        ASVConfig asv = cfgToWSpace(sample);
+	        while(!cSpaceCollisionCheck(asv, tester)) {
+	            sample = getRandomPoint(dimensions, angleRange);
+	            asv = cfgToWSpace(sample);
+	        }
 	        // find nearest configurations from both sides
 	        nearest1 = findNearest(fromInit, sample);
 	        nearest2 = findNearest(fromGoal, sample);
@@ -374,9 +380,10 @@ public class Main {
     /**
 	 * Get random C-state with 2 start coords and n-1 angle;
 	 * @param dimensions = point.number+2
+     * @param angleRange 
 	 * @return array of C-state
 	 */
-	public static Config getRandomPoint(int dimensions)
+	public static Config getRandomPoint(int dimensions, double[] angleRange)
 	{
 	    double[] pts = new double[dimensions];
 	    Random randP = new Random();
@@ -385,11 +392,9 @@ public class Main {
 	    pts[1]= randP.nextDouble();
 	    pts[2]= randP.nextDouble()*2*Math.PI-Math.PI;
 	    //angle
-	    double extAngleSum = 0;
-	    double intAngleSum = 0;
-	    double limit = 0;
 	    for(int i = 3; i < dimensions; i++) {
-	        pts[i] = randP.nextDouble()*0.5*Math.PI+0.5*Math.PI;
+	        double limit = angleRange[i-3];
+	        pts[i] = randP.nextDouble()*(1-limit)*Math.PI+limit*Math.PI;
 	    }
 	    Config cfg  = new Config(pts);
 	    return cfg;
@@ -400,7 +405,7 @@ public class Main {
 	 * @param pts array of C-state
 	 * @return array of coords in work space
 	 */
-	public static double[] cfgToWSpace(Config cfg) {
+	public static ASVConfig cfgToWSpace(Config cfg) {
 		double[] pts = cfg.coords;
 		
 		double [] cfgArray= new double[2*(pts.length-2)];
@@ -435,7 +440,7 @@ public class Main {
 			 */
 			
 		}
-		return cfgArray;
+		return new ASVConfig(cfgArray);
 	}
 	
 	public static void cSpaceCollisionCheck(ASVConfig cfg, Main test, int[] sampleResult){
@@ -461,6 +466,15 @@ public class Main {
             sampleResult[0]++;
         }
  	}
+	public static boolean cSpaceCollisionCheck(ASVConfig cfg, Main test) {
+	    if(test.hasEnoughArea(cfg) && test.isConvex(cfg) && test.fitsBounds(cfg) 
+	            && test.hasCollision(cfg, test.ps.getObstacles())) {
+	        return true;
+	    } else {
+	        return false;
+	    }
+	}
+	
 	/**
 	 * retrieve a configuration which is nearest to the sampled configuration
 	 * @param allConfig: all found configuration
