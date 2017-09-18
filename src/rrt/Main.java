@@ -330,8 +330,8 @@ public class Main {
 	        nearest1 = findNearest(fromInit, sample);
 	        nearest2 = findNearest(fromGoal, sample);
 	        // get the next configurations for both sides
-	        initNext = findNext(sample, nearest1);
-	        goalNext = findNext(sample, nearest2);
+	        initNext = findNext(sample, nearest1, tester);
+	        goalNext = findNext(sample, nearest2, tester);
 	        initNext.predecessor = nearest1;
 	        goalNext.predecessor = nearest2;
 	    }
@@ -531,18 +531,20 @@ public class Main {
      * @param near: nearest configuration to the sample
      * @return: expanded configuration towards the sample from nearest
      */
-    private static Config findNext(Config sample, Config near) {
+    private static Config findNext(Config sample, Config near, Main tester) {
         Config start = near;
         Config result = sample;
+        ASVConfig asv;
         
         // extend towards the sample as far as possible
         while (true) {
-            while (distOverflow(start, result)) {
+            while (distOverflow(start, result, tester)) {
                 // scale down, if the next configuration exceeds the step limitation
                 result = cutDist(start, result);
             }
             // if the next configuration touches collision space, break loop
-            if (!testConfig(result)) {
+            asv = cfgToWSpace(result);
+            if (!cSpaceCollisionCheck(asv, tester)) {
                 return start;
             } else {
                 start = result;
@@ -571,17 +573,11 @@ public class Main {
     /**
      * test whether two configurations meet the step size restriction
      */
-    private static boolean distOverflow(Config start, Config end) {
-        // TODO Auto-generated method stub    	
-        return start.wSpaceTotalDistance(end)<=MAX_STEP;
-    }
-
-    /**
-     * test whether a configuration is valid
-     */
-    private static boolean testConfig(Config result) {
-        // TODO Auto-generated method stub
-        return false;
+    private static boolean distOverflow(Config start, Config end, Main tester) {
+        // TODO Auto-generated method stub  
+        ASVConfig asv1 = cfgToWSpace(start);
+        ASVConfig asv2 = cfgToWSpace(end);
+        return tester.isValidStep(asv1, asv2);
     }
 }
 
