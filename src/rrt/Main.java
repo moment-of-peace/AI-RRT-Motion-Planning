@@ -289,10 +289,10 @@ public class Main {
 	    
 	    int[] sampleResult = {0,0,0,0,0};
 	    for (int i = 0; i < 1000000; i++) {
-	        double[] pts = get_random_point(dimensions);
-	        double[] coords=cfgToWSpace(pts);
-	        ASVConfig cfg=  new ASVConfig(coords);
-	        cSpaceCollisionCheck(cfg,tester, sampleResult);
+	        Config cfg = get_random_point(dimensions);
+	        double[] coords=cfgToWSpace(cfg);
+	        ASVConfig asvC=  new ASVConfig(coords);
+	        cSpaceCollisionCheck(asvC,tester, sampleResult);
 	    }
 	    for (int n: sampleResult) {
 	        System.out.println(n);
@@ -303,7 +303,7 @@ public class Main {
 	 * @param dimensions = point.number+2
 	 * @return array of C-state
 	 */
-	public static double[] get_random_point(int dimensions)
+	public static Config get_random_point(int dimensions)
 	{
 	    double[] pts = new double[dimensions];
 	    Random randP = new Random();
@@ -318,7 +318,8 @@ public class Main {
 	    for(int i = 3; i < dimensions; i++) {
 	        pts[i] = randP.nextDouble()*0.14*Math.PI+0.86*Math.PI;
 	    }
-	    return pts;
+	    Config cfg  = new Config(pts);
+	    return cfg;
 	}
 	
 	/**
@@ -326,7 +327,9 @@ public class Main {
 	 * @param pts array of C-state
 	 * @return array of coords in work space
 	 */
-	public static double[] cfgToWSpace(double[] pts) {
+	public static double[] cfgToWSpace(Config cfg) {
+		double[] pts = cfg.coords;
+		
 		double [] cfgArray= new double[2*(pts.length-2)];
 		double currentX=pts[0];
 		double currentY=pts[1];
@@ -339,15 +342,25 @@ public class Main {
 		for (int i=3; i<pts.length;i++){
 			//transfer to angle fit coords, need test
 			double theta=pi+prevAngle-pts[i];
-			double x = currentX+MAX_BOOM_LENGTH*Math.cos(theta);
-			double y = currentY+MAX_BOOM_LENGTH*Math.sin(theta);
-			cfgArray[2*j]=x;
-			cfgArray[2*j+1]=y;
+			currentX = currentX+MAX_BOOM_LENGTH*Math.cos(theta);
+			currentY = currentY+MAX_BOOM_LENGTH*Math.sin(theta);
+			cfgArray[2*j]=currentX;
+			cfgArray[2*j+1]=currentY;
 			j++;
-			//update current point
-			currentX=x;
-			currentY=y;
+			//update current theta
 			prevAngle=theta;
+			
+			/*
+			    double x = currentX+MAX_BOOM_LENGTH*Math.cos(theta);
+				double y = currentY+MAX_BOOM_LENGTH*Math.sin(theta);
+				cfgArray[2*j]=x;
+				cfgArray[2*j+1]=y;
+				j++;
+				//update current point
+				currentX=x;
+				currentY=y;
+			 */
+			
 		}
 		return cfgArray;
 	}
@@ -387,7 +400,7 @@ public class Main {
 	    double newDist;
 	    
 	    for (Config c: allConfig) {
-	        newDist = getDist(c.coords, sample.coords);
+	        newDist = cSpaceDist(c.coords, sample.coords);
 	        if (newDist < dist) {
 	            dist = newDist;
 	            result = c;
@@ -400,7 +413,7 @@ public class Main {
 	 * compute the distance between two arrays
 	 * @require the size of two input arrays should be the same
 	 */
-    private static double getDist(double[] array1, double[] array2) {
+    private static double cSpaceDist(double[] array1, double[] array2) {
         double sum = 0;
         for (int i = 0; i < array1.length; i++) {
             sum += (array1[i] - array2[i]) * (array1[i] - array2[i]);
@@ -455,8 +468,8 @@ public class Main {
      * test whether two configurations meet the step size restriction
      */
     private static boolean distOverflow(Config start, Config end) {
-        // TODO Auto-generated method stub
-        return false;
+        // TODO Auto-generated method stub    	
+        return start.wSpaceTotalDistance(end)<=MAX_STEP;
     }
 
     /**
