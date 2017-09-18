@@ -295,7 +295,7 @@ public class Main {
 	    
 	    int[] sampleResult = {0,0,0,0,0};
 	    for (int i = 0; i < 1000000; i++) {
-	        Config cfg = get_random_point(dimensions);
+	        Config cfg = getRandomPoint(dimensions);
 	        double[] coords=cfgToWSpace(cfg);
 	        ASVConfig asvC=  new ASVConfig(coords);
 	        cSpaceCollisionCheck(asvC,tester, sampleResult);
@@ -317,7 +317,7 @@ public class Main {
 	    double[] angleRange = new double[initCoords.length-3];
 	    
 	    for (int i = 0; i < angleRange.length; i++) {
-	        angleRange[i] = (initCoords[i+3]>goalCoords[i+3]?initCoords[i+3]:goalCoords[i+3]);
+	        angleRange[i] = (initCoords[i+3]<goalCoords[i+3]?initCoords[i+3]:goalCoords[i+3]);
 	    }
         return angleRange;
     }
@@ -327,7 +327,21 @@ public class Main {
 	 */
 	private static Config toConfig(ASVConfig initialState) {
         // TODO Auto-generated method stub
-        return null;
+		List<Point2D> positions = initialState.getASVPositions();
+		double [] pts = new double [initialState.getASVCount()];
+		Point2D p0= positions.get(0);
+		pts[0]=p0.getX();
+		pts[1]=p0.getY();
+		
+		for (int i=0;i<positions.size();i++){
+			p0= positions.get(i);
+			Point2D p1 = positions.get(i+1);
+            double nextAngle = Math.atan2(p1.getY() - p0.getY(),
+                    p1.getX() - p0.getX());
+            pts[i+2]=nextAngle;		
+		}
+		Config cfg = new Config(pts);
+        return cfg;
     }
 
     /**
@@ -335,7 +349,7 @@ public class Main {
 	 * @param dimensions = point.number+2
 	 * @return array of C-state
 	 */
-	public static Config get_random_point(int dimensions)
+	public static Config getRandomPoint(int dimensions)
 	{
 	    double[] pts = new double[dimensions];
 	    Random randP = new Random();
