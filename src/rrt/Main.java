@@ -287,6 +287,12 @@ public class Main {
 	    int asvCount = tester.ps.getASVCount();
 	    int dimensions = asvCount + 2; // dimension degree of c space
 	    
+	    // get initial and goal coordinates in c space
+	    Config initConfig = toConfig(tester.ps.getInitialState());
+	    Config goalConfig = toConfig(tester.ps.getGoalState());
+	    
+	    double[] angleRange = getAngleRange(initConfig, goalConfig);
+	    
 	    int[] sampleResult = {0,0,0,0,0};
 	    for (int i = 0; i < 100000; i++) {
 	        double[] pts = get_random_point(dimensions);
@@ -298,7 +304,33 @@ public class Main {
 	        System.out.println(n);
 	    }
 	}
+	
 	/**
+	 * 
+	 * @param initConfig
+	 * @param goalConfig
+	 * @return
+	 */
+	private static double[] getAngleRange(Config initConfig, Config goalConfig) {
+        double[] initCoords = initConfig.coords;
+        double[] goalCoords = goalConfig.coords;
+	    double[] angleRange = new double[initCoords.length-3];
+	    
+	    for (int i = 0; i < angleRange.length; i++) {
+	        angleRange[i] = (initCoords[i+3]>goalCoords[i+3]?initCoords[i+3]:goalCoords[i+3]);
+	    }
+        return angleRange;
+    }
+
+    /**
+	 * convert a state from workspace to c space
+	 */
+	private static Config toConfig(ASVConfig initialState) {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    /**
 	 * Get random C-state with 2 start coords and n-1 angle;
 	 * @param dimensions = point.number+2
 	 * @return array of C-state
@@ -316,7 +348,7 @@ public class Main {
 	    double intAngleSum = 0;
 	    double limit = 0;
 	    for(int i = 3; i < dimensions; i++) {
-	        pts[i] = randP.nextDouble()*0.14*Math.PI+0.86*Math.PI;
+	        pts[i] = randP.nextDouble()*0.5*Math.PI+0.5*Math.PI;
 	    }
 	    return pts;
 	}
