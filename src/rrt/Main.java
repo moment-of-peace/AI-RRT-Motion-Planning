@@ -293,9 +293,9 @@ public class Main {
 	    HashSet<Config> fromGoal = new HashSet<Config>();
 	    
 	    // get initial and goal coordinates in c space
-	    Config initConfig = toConfig(tester.ps.getInitialState());
-	    Config goalConfig = toConfig(tester.ps.getGoalState());
-	    /*
+	    Config initConfig = toConfig(tester.ps.getInitialState(),tester);
+	    Config goalConfig = toConfig(tester.ps.getGoalState(),tester);
+	    
 	    for (double d:initConfig.coords){
 	    	System.out.println(d);
 	    }
@@ -303,7 +303,7 @@ public class Main {
 	    for (double d:goalConfig.coords){
 	    	System.out.println(d);
 	    }
-	    */
+	    
 	    // add initial and goal into hashsets
 	    
 	    
@@ -372,7 +372,7 @@ public class Main {
     /**
 	 * convert a state from workspace to c space
 	 */
-	private static Config toConfig(ASVConfig initialState) {
+	private static Config toConfig(ASVConfig initialState, Main tester) {
         // TODO Auto-generated method stub
 		List<Point2D> positions = initialState.getASVPositions();
 		//length
@@ -380,14 +380,15 @@ public class Main {
 		Point2D p0= positions.get(0);
 		pts[0]=p0.getX();
 		pts[1]=p0.getY();
-		double prevAngle=PI;
+		double prevAngle=0;
 		for (int i=1;i<positions.size();i++){
 			Point2D p1 = positions.get(i);
             double currentAngle = Math.atan2(p1.getY() - p0.getY(),
                     p1.getX() - p0.getX());
             
-            pts[i+1]=2*PI-prevAngle-currentAngle;
-            prevAngle=PI-currentAngle;
+            pts[i+1]=tester.normaliseAngle(PI+prevAngle-currentAngle);
+            
+            prevAngle=currentAngle;
             p0=p1;
 		}
 		Config cfg = new Config(pts);
