@@ -353,6 +353,8 @@ public class Main {
 	    }
 	    System.out.println("finished, total configs: " + total);
 	    FileWriter fw = new FileWriter(outputName);
+	    fw.write(total + " ");
+	    fw.write("0.66\n");
 	    writeSol1(fw, initNext);
 	    writeSol2(fw, goalNext);
 	    fw.close();
@@ -373,8 +375,18 @@ public class Main {
 	
 	private static void writeSol1(FileWriter fw, Config goalNext) {
         // TODO Auto-generated method stub
-        
-    }
+        ArrayList<Config> solution = new ArrayList<Config>();
+        Config pred = goalNext.predecessor;
+        while (pred != null) {
+            solution.add(pred);
+            pred = pred.predecessor;
+        }
+        List<Point2D> pos;
+        for (int i = solution.size()-1; i > -1; i--) {
+            pos = cfgToWSpace(solution.get(i)).getASVPositions();
+            
+        }
+     }
 
     private static void writeSol2(FileWriter fw, Config initNext) {
         // TODO Auto-generated method stub
