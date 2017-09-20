@@ -371,18 +371,18 @@ public class Main {
 	    */
 	}
 	
-	private static void writeSol1(FileWriter fw, Config goalNext) throws IOException {
+	private static void writeSol1(FileWriter fw, Config initNext) throws IOException {
         // TODO Auto-generated method stub
-        printPosition(goalNext,fw);
+        
+    }
+
+    private static void writeSol2(FileWriter fw, Config goalNext) throws IOException {
+        // TODO Auto-generated method stub
+    	printPosition(goalNext,fw);
         while(goalNext.predecessor!=null){
         	goalNext=goalNext.predecessor;
         	printPosition(goalNext,fw);
         }
-    }
-
-    private static void writeSol2(FileWriter fw, Config initNext) {
-        // TODO Auto-generated method stub
-    	
         
     }
     
