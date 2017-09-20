@@ -371,16 +371,30 @@ public class Main {
 	    */
 	}
 	
-	private static void writeSol1(FileWriter fw, Config goalNext) {
+	private static void writeSol1(FileWriter fw, Config goalNext) throws IOException {
         // TODO Auto-generated method stub
-        
+        printPosition(goalNext,fw);
+        while(goalNext.predecessor!=null){
+        	goalNext=goalNext.predecessor;
+        	printPosition(goalNext,fw);
+        }
     }
 
     private static void writeSol2(FileWriter fw, Config initNext) {
         // TODO Auto-generated method stub
+    	
         
     }
-
+    
+    private static void printPosition(Config config, FileWriter fw) throws IOException{
+    	List<Point2D> s2  = cfgToWSpace(config).getASVPositions();
+    	String sep = "";
+    	for (Point2D p:s2){
+    		fw.write(sep+p.getX()+" "+p.getY());
+    		sep=" ";
+    	}
+    	fw.write("/n");
+    }
     /**
 	 * 
 	 * @param initConfig
