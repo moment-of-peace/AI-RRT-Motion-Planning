@@ -296,8 +296,8 @@ public class Main {
 	    HashSet<Config> fromGoal = new HashSet<Config>();
 	    
 	    // get initial and goal coordinates in c space
-	    Config initConfig = toConfig(tester.ps.getInitialState(),tester);
-	    Config goalConfig = toConfig(tester.ps.getGoalState(),tester);
+	    Config initConfig = asvConfigToCfg(tester.ps.getInitialState(),tester);
+	    Config goalConfig = asvConfigToCfg(tester.ps.getGoalState(),tester);
 	    // clockwise or anti-clockwise
 	    if (initConfig.coords.length > 3 && initConfig.coords[3] < 0) {
 	        clock = -1;
@@ -329,10 +329,10 @@ public class Main {
 	    while (!initNext.equals(goalNext)) {
 	        total++;
 	        sample = getRandomPoint(dimensions, angleRange);
-	        ASVConfig asv = cfgToWSpace(sample);
+	        ASVConfig asv = cfgToASVConfig(sample);
 	        while(!cSpaceCollisionCheck(asv, tester)) {
 	            sample = getRandomPoint(dimensions, angleRange);
-	            asv = cfgToWSpace(sample);
+	            asv = cfgToASVConfig(sample);
 	            sam++;
 	        }//System.out.println("got random");
 	        // find nearest configurations from both sides
@@ -351,10 +351,17 @@ public class Main {
 	    }
 	    System.out.println("finished, total configs: " + total);
 	    FileWriter fw = new FileWriter(outputName);
-	    fw.write(total + " ");
-	    fw.write("7\n");
-	    writeSol1(fw, initNext);
-	    writeSol2(fw, goalNext);
+	    //fw.write(total + " ");
+	    //fw.write("7\n");
+	    List<ASVConfig> solution = getSol1(initNext,tester);
+	    solution.addAll(getSol2(goalNext,tester));
+	    tester.ps.setPath(solution);
+	    fw.write(solution.size()-1+" "+tester.ps.calculateTotalCost()+"\n");
+	    printPosition(tester.ps.getInitialState(),fw);
+	    for (ASVConfig asv:solution){
+	    	printPosition(asv,fw);
+	    }
+	    printPosition(tester.ps.getGoalState(),fw);
 	    fw.close();
 	    
 	    /*
@@ -371,9 +378,11 @@ public class Main {
 	    */
 	}
 	
-	private static void writeSol1(FileWriter fw, Config initNext) throws IOException {
+	private static List<ASVConfig> getSol1(Config initNext, Main tester) 
+			throws IOException {
         // TODO Auto-generated method stub
         ArrayList<Config> solution = new ArrayList<Config>();
+        List<ASVConfig> sol1 = new ArrayList<ASVConfig>();
         Config pred = initNext.predecessor;
         while (pred != null) {
             solution.add(pred);
@@ -382,22 +391,59 @@ public class Main {
         Config config;
         for (int i = solution.size()-1; i > -1; i--) {
             config = solution.get(i);
-            printPosition(config, fw);
+            Config start = config;
+            if(i!=0){
+            	Config result = solution.get(i-1);
+	            while(!validDistance(start,result,tester)){
+	            	while(!validDistance(start, result, tester)){
+		        		result = cutDist(start, result);
+		        	}
+	            	sol1.add(cfgToASVConfig(result));
+	        		start=result;
+	        		result=solution.get(i-1);
+	            }
+            }else{	        		
+        		Config result = initNext;
+            	while(!validDistance(start,result,tester)){
+	            	while(!validDistance(start, result, tester)){
+		        		result = cutDist(start, result);
+		        	}
+	            	sol1.add(cfgToASVConfig(result));
+	        		start=result;
+	        		result=initNext;
+	            }
+            }
         }
+        return sol1;
+        
      }
 
-    private static void writeSol2(FileWriter fw, Config goalNext) throws IOException {
+    private static List<ASVConfig> getSol2(Config goalNext, Main tester) 
+    		throws IOException {
         // TODO Auto-generated method stub
-        printPosition(goalNext,fw);
+    	List<ASVConfig> sol2 = new ArrayList<ASVConfig>();
+    	sol2.add(cfgToASVConfig(goalNext));
+               
         while(goalNext.predecessor!=null){
+        	Config start = goalNext;
+        	Config result = goalNext.predecessor;
+        	while (!validDistance(start, result, tester)){
+	        	while(!validDistance(start, result, tester)){
+	        		result = cutDist(start, result);
+	        	}
+	        	sol2.add(cfgToASVConfig(result));
+        		start=result;
+        		result=goalNext.predecessor;
+        	}
             goalNext=goalNext.predecessor;
-            printPosition(goalNext,fw);
+            //printPosition(goalNext,fw);
         }
+        return sol2;
         
     }
     
-    private static void printPosition(Config config, FileWriter fw) throws IOException{
-        List<Point2D> s2  = cfgToWSpace(config).getASVPositions();
+    private static void printPosition(ASVConfig config, FileWriter fw) throws IOException{
+        List<Point2D> s2  = config.getASVPositions();
         String sep = "";
         for (Point2D p:s2){
             fw.write(sep+p.getX()+" "+p.getY());
@@ -425,7 +471,7 @@ public class Main {
     /**
 	 * convert a state from workspace to c space
 	 */
-	private static Config toConfig(ASVConfig initialState, Main tester) {
+	private static Config asvConfigToCfg(ASVConfig initialState, Main tester) {
         // TODO Auto-generated method stub
 		List<Point2D> positions = initialState.getASVPositions();
 		//length
@@ -476,7 +522,7 @@ public class Main {
 	 * @param pts array of C-state
 	 * @return array of coords in work space
 	 */
-	public static ASVConfig cfgToWSpace(Config cfg) {
+	public static ASVConfig cfgToASVConfig(Config cfg) {
 		double[] pts = cfg.coords;
 		
 		double [] cfgArray= new double[2*(pts.length-1)];
@@ -592,7 +638,7 @@ public class Main {
         // extend towards the sample as far as possible
         while (true) {
             int i = 0;
-            while (!distOverflow(start, result, tester)) {
+            while (!validDistance(start, result, tester)) {
                 // scale down, if the next configuration exceeds the step limitation
                 i++;
                 result = cutDist(start, result);
@@ -600,12 +646,12 @@ public class Main {
             }
             //System.out.println("distance ok: " + i);
             // if the next configuration touches collision space, break loop
-            asv = cfgToWSpace(result);
+            asv = cfgToASVConfig(result);
             if (!cSpaceCollisionCheck(asv, tester)) {
                 //if (start.equals(sample)) System.out.println("equal");
                 //System.out.println("next ok");
                 return new Config(start.coords); // if start is near
-            } else if (distOverflow(result, sample, tester)) {
+            } else if (validDistance(result, sample, tester)) {
                 //System.out.println("equal");
                 return new Config(sample.coords);
             } else {
@@ -628,7 +674,7 @@ public class Main {
         double[] result = new double[coords1.length];
         // scale down
         for (int i = 0; i < coords1.length; i++) {
-            result[i] = coords2[i] + 0.50 * (coords1[i] - coords2[i]);
+            result[i] = coords1[i] + 0.50 * (coords2[i] - coords1[i]);
         }
         return new Config(result);
     }
@@ -636,10 +682,10 @@ public class Main {
     /**
      * test whether two configurations meet the step size restriction
      */
-    private static boolean distOverflow(Config start, Config end, Main tester) {
+    private static boolean validDistance(Config start, Config end, Main tester) {
         // TODO Auto-generated method stub  
-        ASVConfig asv1 = cfgToWSpace(start);
-        ASVConfig asv2 = cfgToWSpace(end);
+        ASVConfig asv1 = cfgToASVConfig(start);
+        ASVConfig asv2 = cfgToASVConfig(end);
         return tester.isValidStep(asv1, asv2);
     }
 }
