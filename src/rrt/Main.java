@@ -6,6 +6,7 @@ package rrt;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -347,7 +348,10 @@ public class Main {
 	        System.out.println(total);
 	    }
 	    System.out.println("finished, total configs: " + total);
-	    
+	    FileWriter fw = new FileWriter(outputName);
+	    writeSol1(fw, initNext);
+	    writeSol2(fw, goalNext);
+	    fw.close();
 	    
 	    /*
 	    int[] sampleResult = {0,0,0,0,0};
@@ -363,7 +367,17 @@ public class Main {
 	    */
 	}
 	
-	/**
+	private static void writeSol1(FileWriter fw, Config goalNext) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    private static void writeSol2(FileWriter fw, Config initNext) {
+        // TODO Auto-generated method stub
+        
+    }
+
+    /**
 	 * 
 	 * @param initConfig
 	 * @param goalConfig
