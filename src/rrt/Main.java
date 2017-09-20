@@ -375,7 +375,6 @@ public class Main {
 	
 	private static void writeSol1(FileWriter fw, Config initNext) throws IOException {
         // TODO Auto-generated method stub
-<<<<<<< HEAD
         ArrayList<Config> solution = new ArrayList<Config>();
         Config pred = initNext.predecessor;
         while (pred != null) {
@@ -396,18 +395,6 @@ public class Main {
             goalNext=goalNext.predecessor;
             printPosition(goalNext,fw);
         }
-=======
-        
-    }
-
-    private static void writeSol2(FileWriter fw, Config goalNext) throws IOException {
-        // TODO Auto-generated method stub
-    	printPosition(goalNext,fw);
-        while(goalNext.predecessor!=null){
-        	goalNext=goalNext.predecessor;
-        	printPosition(goalNext,fw);
-        }
->>>>>>> e377ddc746015b8614da02aa142b78bae45e94b5
         
     }
     
