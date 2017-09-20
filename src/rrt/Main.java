@@ -299,12 +299,12 @@ public class Main {
 	    Config initConfig = toConfig(tester.ps.getInitialState(),tester);
 	    Config goalConfig = toConfig(tester.ps.getGoalState(),tester);
 	    // clockwise or anti-clockwise
-	    if (initConfig.coords.length > 3 || initConfig.coords[3] < 0) {
+	    if (initConfig.coords.length > 3 && initConfig.coords[3] < 0) {
 	        clock = -1;
 	    } else {
 	        clock = 1;
 	    }
-	    
+	    System.out.println("clock: " + clock);
 	    for (double d:initConfig.coords){
 	    	System.out.println(d);
 	    }
@@ -352,7 +352,7 @@ public class Main {
 	    System.out.println("finished, total configs: " + total);
 	    FileWriter fw = new FileWriter(outputName);
 	    fw.write(total + " ");
-	    fw.write("0.66\n");
+	    fw.write("7\n");
 	    writeSol1(fw, initNext);
 	    writeSol2(fw, goalNext);
 	    fw.close();
@@ -628,7 +628,7 @@ public class Main {
         double[] result = new double[coords1.length];
         // scale down
         for (int i = 0; i < coords1.length; i++) {
-            result[i] = coords2[i] + 0.75 * (coords1[i] - coords2[i]);
+            result[i] = coords2[i] + 0.50 * (coords1[i] - coords2[i]);
         }
         return new Config(result);
     }
