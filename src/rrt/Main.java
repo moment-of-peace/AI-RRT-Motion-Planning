@@ -284,7 +284,7 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		// load problem from a file
 	    String fileName = args[0];
-	    String outputName = "out-" + fileName;  // should be args[1]
+	    String outputName = "output.txt";  // should be args[1]
 	    Main tester = new Main(DEFAULT_MAX_ERROR);
 	    tester.ps.loadProblem(fileName);System.out.println("obstacle number: " + tester.ps.getObstacles().size());
 	    
@@ -304,7 +304,7 @@ public class Main {
 	    } else {
 	        clock = 1;
 	    }
-	    /*
+	    
 	    for (double d:initConfig.coords){
 	    	System.out.println(d);
 	    }
@@ -312,10 +312,8 @@ public class Main {
 	    for (double d:goalConfig.coords){
 	    	System.out.println(d);
 	    }
-	    */
+	    
 	    // add initial and goal into hashsets
-	    
-	    
 	    fromInit.add(initConfig);
 	    fromGoal.add(goalConfig);
 	    
@@ -405,7 +403,7 @@ public class Main {
             fw.write(sep+p.getX()+" "+p.getY());
             sep=" ";
         }
-        fw.write("/n");
+        fw.write("\n");
     }
     /**
 	 * 
@@ -484,12 +482,12 @@ public class Main {
 		double [] cfgArray= new double[2*(pts.length-1)];
 		double currentX=pts[0];
 		double currentY=pts[1];
-		double prevAngle=pts[2];
+		double prevAngle=0;
 		cfgArray[0]=pts[0];
 		cfgArray[1]=pts[1];
 		int j=1;
 		
-		for (int i=3; i<pts.length;i++){
+		for (int i=2; i<pts.length;i++){
 			//transfer to angle fit coords, need test
 			double theta=PI+prevAngle-pts[i];
 			currentX = currentX+MAX_BOOM_LENGTH*Math.cos(theta);
