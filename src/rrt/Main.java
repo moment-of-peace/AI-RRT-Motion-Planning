@@ -283,8 +283,9 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		// load problem from a file
 	    String fileName = args[0];
+	    String outputName = "out-" + fileName;  // should be args[1]
 	    Main tester = new Main(DEFAULT_MAX_ERROR);
-	    tester.ps.loadProblem(fileName);
+	    tester.ps.loadProblem(fileName);System.out.println("obstacle number: " + tester.ps.getObstacles().size());
 	    
 	    int asvCount = tester.ps.getASVCount();
 	    int dimensions = asvCount + 1; // dimension degree of c space
@@ -422,7 +423,7 @@ public class Main {
 	    //angle
 	    for(int i = 3; i < dimensions; i++) {
 	        double limit = angleRange[i-3];
-	        pts[i] = (randP.nextDouble()*(1-limit)*PI+limit*PI)*clock;
+	        pts[i] = (randP.nextDouble()*(PI-limit)+limit)*clock;
 	    }
 	    Config cfg  = new Config(pts);
 	    return cfg;
@@ -559,7 +560,7 @@ public class Main {
             asv = cfgToWSpace(result);
             if (!cSpaceCollisionCheck(asv, tester)  ||  start == sample) {
                 System.out.println("next ok");
-                return start;
+                return new Config(start.coords); // if start is near
             } else {
                 System.out.println("next retry");
                 start = result;
@@ -580,7 +581,7 @@ public class Main {
         double[] result = new double[coords1.length];
         // scale down
         for (int i = 0; i < coords1.length; i++) {
-            result[i] = 0.75 * coords1[i] + coords2[i];
+            result[i] = 0.75 * (coords1[i] + coords2[i]);
         }
         return new Config(result);
     }
