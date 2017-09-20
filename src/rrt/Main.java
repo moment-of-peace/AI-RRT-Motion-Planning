@@ -303,6 +303,7 @@ public class Main {
 	    } else {
 	        clock = 1;
 	    }
+	    /*
 	    for (double d:initConfig.coords){
 	    	System.out.println(d);
 	    }
@@ -310,7 +311,7 @@ public class Main {
 	    for (double d:goalConfig.coords){
 	    	System.out.println(d);
 	    }
-	    
+	    */
 	    // add initial and goal into hashsets
 	    
 	    
@@ -325,6 +326,7 @@ public class Main {
 	    
 	    Config sample, nearest1, nearest2;
 	    int total = 0;
+	    int sam =0;
 	    while (!initNext.equals(goalNext)) {
 	        total++;
 	        sample = getRandomPoint(dimensions, angleRange);
@@ -332,6 +334,7 @@ public class Main {
 	        while(!cSpaceCollisionCheck(asv, tester)) {
 	            sample = getRandomPoint(dimensions, angleRange);
 	            asv = cfgToWSpace(sample);
+	            sam++;
 	        }System.out.println("got random");
 	        // find nearest configurations from both sides
 	        nearest1 = findNearest(fromInit, sample);
@@ -344,6 +347,7 @@ public class Main {
 	        // store next configurations
 	        fromInit.add(initNext);
 	        fromGoal.add(goalNext);
+	        System.out.println(sam);
 	        System.out.println(total);
 	    }
 	    System.out.println("finished, total configs: " + total);
