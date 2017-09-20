@@ -325,7 +325,7 @@ public class Main {
 	    
 	    Config sample, nearest1, nearest2;
 	    int total = 0;
-	    int sam =0;
+	    int sam =0;System.out.println("1");
 	    while (!initNext.equals(goalNext)) {
 	        total++;
 	        sample = getRandomPoint(dimensions, angleRange);
@@ -334,20 +334,20 @@ public class Main {
 	            sample = getRandomPoint(dimensions, angleRange);
 	            asv = cfgToWSpace(sample);
 	            sam++;
-	        }System.out.println("got random");
+	        }//System.out.println("got random");
 	        // find nearest configurations from both sides
 	        nearest1 = findNearest(fromInit, sample);
-	        nearest2 = findNearest(fromGoal, sample);System.out.println("found nearest");
+	        nearest2 = findNearest(fromGoal, sample);//System.out.println("found nearest");
 	        // get the next configurations for both sides
 	        initNext = findNext(sample, nearest1, tester);
-	        goalNext = findNext(sample, nearest2, tester);System.out.println("found next");
+	        goalNext = findNext(sample, nearest2, tester);//System.out.println("found next");
 	        initNext.predecessor = nearest1;
 	        goalNext.predecessor = nearest2;
 	        // store next configurations
 	        fromInit.add(initNext);
 	        fromGoal.add(goalNext);
-	        System.out.println(sam);
-	        System.out.println(total);
+	        //System.out.println(sam);
+	        if (total%1000 == 0) System.out.println(total);
 	    }
 	    System.out.println("finished, total configs: " + total);
 	    FileWriter fw = new FileWriter(outputName);
@@ -538,7 +538,7 @@ public class Main {
  	}
 	public static boolean cSpaceCollisionCheck(ASVConfig cfg, Main test) {
 	    if(test.hasEnoughArea(cfg) && test.isConvex(cfg) && test.fitsBounds(cfg) 
-	            && test.hasCollision(cfg, test.ps.getObstacles())) {
+	            && !test.hasCollision(cfg, test.ps.getObstacles())) {
 	        return true;
 	    } else {
 	        return false;
@@ -592,19 +592,24 @@ public class Main {
         // extend towards the sample as far as possible
         while (true) {
             int i = 0;
-            while (distOverflow(start, result, tester)) {
+            while (!distOverflow(start, result, tester)) {
                 // scale down, if the next configuration exceeds the step limitation
                 i++;
                 result = cutDist(start, result);
+                //if (i%1000 == 0) System.out.println(i);
             }
-            System.out.println("distance ok: " + i);
+            //System.out.println("distance ok: " + i);
             // if the next configuration touches collision space, break loop
             asv = cfgToWSpace(result);
-            if (!cSpaceCollisionCheck(asv, tester)  ||  start == sample) {
-                System.out.println("next ok");
+            if (!cSpaceCollisionCheck(asv, tester)) {
+                //if (start.equals(sample)) System.out.println("equal");
+                //System.out.println("next ok");
                 return new Config(start.coords); // if start is near
+            } else if (distOverflow(result, sample, tester)) {
+                //System.out.println("equal");
+                return new Config(sample.coords);
             } else {
-                System.out.println("next retry");
+                //System.out.println("next retry");
                 start = result;
                 result = sample;
             }
@@ -623,7 +628,7 @@ public class Main {
         double[] result = new double[coords1.length];
         // scale down
         for (int i = 0; i < coords1.length; i++) {
-            result[i] = 0.75 * (coords1[i] + coords2[i]);
+            result[i] = coords2[i] + 0.75 * (coords1[i] - coords2[i]);
         }
         return new Config(result);
     }
