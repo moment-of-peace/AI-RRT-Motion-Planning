@@ -284,7 +284,7 @@ public class Main {
 	public static void main(String[] args) throws IOException {
 		// load problem from a file
 	    String fileName = args[0];
-	    String outputName = "out-" + fileName;  // should be args[1]
+	    String outputName = "output.txt";  // should be args[1]
 	    Main tester = new Main(DEFAULT_MAX_ERROR);
 	    tester.ps.loadProblem(fileName);System.out.println("obstacle number: " + tester.ps.getObstacles().size());
 	    
@@ -405,7 +405,7 @@ public class Main {
             fw.write(sep+p.getX()+" "+p.getY());
             sep=" ";
         }
-        fw.write("/n");
+        fw.write("\n");
     }
     /**
 	 * 
