@@ -279,6 +279,7 @@ public class Main {
         return false;
     }
         
+    private static int clock;
 	public static void main(String[] args) throws IOException {
 		// load problem from a file
 	    String fileName = args[0];
@@ -295,7 +296,12 @@ public class Main {
 	    // get initial and goal coordinates in c space
 	    Config initConfig = toConfig(tester.ps.getInitialState(),tester);
 	    Config goalConfig = toConfig(tester.ps.getGoalState(),tester);
-	    
+	    // clockwise or anti-clockwise
+	    if (initConfig.coords.length > 3 || initConfig.coords[3] < 0) {
+	        clock = -1;
+	    } else {
+	        clock = 1;
+	    }
 	    for (double d:initConfig.coords){
 	    	System.out.println(d);
 	    }
@@ -325,15 +331,19 @@ public class Main {
 	        while(!cSpaceCollisionCheck(asv, tester)) {
 	            sample = getRandomPoint(dimensions, angleRange);
 	            asv = cfgToWSpace(sample);
-	        }
+	        }System.out.println("got random");
 	        // find nearest configurations from both sides
 	        nearest1 = findNearest(fromInit, sample);
-	        nearest2 = findNearest(fromGoal, sample);
+	        nearest2 = findNearest(fromGoal, sample);System.out.println("found nearest");
 	        // get the next configurations for both sides
 	        initNext = findNext(sample, nearest1, tester);
-	        goalNext = findNext(sample, nearest2, tester);
+	        goalNext = findNext(sample, nearest2, tester);System.out.println("found next");
 	        initNext.predecessor = nearest1;
 	        goalNext.predecessor = nearest2;
+	        // store next configurations
+	        fromInit.add(initNext);
+	        fromGoal.add(goalNext);
+	        System.out.println(total);
 	    }
 	    System.out.println("finished, total configs: " + total);
 	    
@@ -412,7 +422,7 @@ public class Main {
 	    //angle
 	    for(int i = 3; i < dimensions; i++) {
 	        double limit = angleRange[i-3];
-	        pts[i] = randP.nextDouble()*(1-limit)*PI+limit*PI;
+	        pts[i] = (randP.nextDouble()*(1-limit)*PI+limit*PI)*clock;
 	    }
 	    Config cfg  = new Config(pts);
 	    return cfg;
@@ -538,15 +548,20 @@ public class Main {
         
         // extend towards the sample as far as possible
         while (true) {
+            int i = 0;
             while (distOverflow(start, result, tester)) {
                 // scale down, if the next configuration exceeds the step limitation
+                i++;
                 result = cutDist(start, result);
             }
+            System.out.println("distance ok: " + i);
             // if the next configuration touches collision space, break loop
             asv = cfgToWSpace(result);
-            if (!cSpaceCollisionCheck(asv, tester)) {
+            if (!cSpaceCollisionCheck(asv, tester)  ||  start == sample) {
+                System.out.println("next ok");
                 return start;
             } else {
+                System.out.println("next retry");
                 start = result;
                 result = sample;
             }
