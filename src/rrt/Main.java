@@ -328,19 +328,11 @@ public class Main {
 	    int sam =0;System.out.println("1");
 	    while (!initNext.equals(goalNext)) {
 	        total++;
-<<<<<<< HEAD
-	        sample = getRandomPoint(dimensions, angleRange);
-	        ASVConfig asv = cfgToASVConfig(sample);
-	        while(!cSpaceCollisionCheck(asv, tester)) {
-	            sample = getRandomPoint(dimensions, angleRange);
-	            asv = cfgToASVConfig(sample);
-=======
 	        sample = getRandomPoint(dimensions, angleRange, tester);
-	        ASVConfig asv = cfgToWSpace(sample);
+	        ASVConfig asv = cfgToASVConfig(sample);
 	        while(!cSpaceCollisionCheck1(asv, tester)) {
 	            sample = getRandomPoint(dimensions, angleRange, tester);
-	            asv = cfgToWSpace(sample);
->>>>>>> yi
+	            asv = cfgToASVConfig(sample);
 	            sam++;
 	        }//System.out.println("got random");
 	        
@@ -348,13 +340,13 @@ public class Main {
 	        nearest1 = findNearest(fromInit, sample);
 	        nearest2 = findNearest(fromGoal, sample);//System.out.println("found nearest");
 	        // get the next configurations for both sides
-	        initNext = findNext(sample, nearest1, tester);
-	        goalNext = findNext(sample, nearest2, tester);//System.out.println("found next");
-	        initNext.predecessor = nearest1;
-	        goalNext.predecessor = nearest2;
+	        initNext = findNext(sample, nearest1, tester, fromInit);
+	        goalNext = findNext(sample, nearest2, tester, fromGoal);//System.out.println("found next");
+	        //initNext.predecessor = nearest1;
+	        //goalNext.predecessor = nearest2;
 	        // store next configurations
-	        fromInit.add(initNext);
-	        fromGoal.add(goalNext);
+	        //fromInit.add(initNext);
+	        //fromGoal.add(goalNext);
 	        //System.out.println(sam);
 	        if (total%1000 == 0) System.out.println(total);
 	    }
@@ -365,7 +357,7 @@ public class Main {
 	    List<ASVConfig> solution = getSol1(initNext,tester);
 	    solution.addAll(getSol2(goalNext,tester));
 	    tester.ps.setPath(solution);
-	    fw.write(solution.size()-1+" "+tester.ps.calculateTotalCost()+"\n");
+	    fw.write(solution.size()-1+" "+tester.ps.calculateTotalCost()+"\n"); //get sol cost
 	    printPosition(tester.ps.getInitialState(),fw);
 	    for (ASVConfig asv:solution){
 	    	printPosition(asv,fw);
@@ -539,7 +531,7 @@ public class Main {
 	            }
 	        }
 	        if (flag == true) {
-	            return toConfig(new ASVConfig(position), tester);
+	            return asvConfigToCfg(new ASVConfig(position), tester);
 	        }
 	        if (times%100 == 0) System.out.println("rand: " + times + " " + i + " "+ position[0] + " " + position[1]);
 	    }
@@ -725,19 +717,20 @@ public class Main {
      * @param near: nearest configuration to the sample
      * @return: expanded configuration towards the sample from nearest
      */
-    private static ArrayList<Config> findNext(Config sample, Config near, Main tester) {
+    private static Config findNext(Config sample, Config near, Main tester, HashSet<Config> cfgSet) {
         Config start = near;
         Config result = sample;
+        Config previous = near;
+        Config next;
         ASVConfig asv;
-        ArrayList<Config> next = new ArrayList<Config>();
         int num = 1;
         
         // extend towards the sample as far as possible
         while (true) {
-            int i = 0;
+            //int i = 0;
             while (!validDistance(start, result, tester)) {
                 // scale down, if the next configuration exceeds the step limitation
-                i++;
+                //i++;
                 result = cutDist(start, result);
                 //if (i%1000 == 0) System.out.println(i);
             }
@@ -747,18 +740,20 @@ public class Main {
             if (!cSpaceCollisionCheck(asv, tester)) {
                 //if (start.equals(sample)) System.out.println("equal");
                 //System.out.println("next ok");
-<<<<<<< HEAD
-                return new Config(start.coords); // if start is near
-=======
-                return next; // if start is near
->>>>>>> yi
+                return start; // if start is near
             } else if (validDistance(result, sample, tester)) {
                 //System.out.println("equal");
-                next.add(new Config(sample.coords));
+                next = new Config(sample.coords, previous);
+                cfgSet.add(next);
                 return next;
             } else {
                 //System.out.println("next retry");
-                next.add(new Config(result.coords));
+                num++;
+                if (num%10 == 0) {
+                    next = new Config(result.coords, previous);
+                    cfgSet.add(next);
+                    previous = next;
+                }
                 start = result;
                 result = sample;
             }
@@ -777,11 +772,7 @@ public class Main {
         double[] result = new double[coords1.length];
         // scale down
         for (int i = 0; i < coords1.length; i++) {
-<<<<<<< HEAD
             result[i] = coords1[i] + 0.50 * (coords2[i] - coords1[i]);
-=======
-            result[i] = coords2[i] + 0.75 * (coords1[i] - coords2[i]);
->>>>>>> yi
         }
         return new Config(result);
     }
