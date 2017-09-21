@@ -8,9 +8,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
 
-import problem.ASVConfig;
-import problem.Obstacle;
-import problem.ProblemSpec;
+import rrt.ASVConfig;
+import rrt.Obstacle;
+import rrt.ProblemSpec;
 
 public class Tester {
     /** The maximum distance any ASV can travel between two states */

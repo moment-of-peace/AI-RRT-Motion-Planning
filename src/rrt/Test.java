@@ -7,10 +7,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import problem.ASVConfig;
-import problem.Obstacle;
-import problem.ProblemSpec;
-
 public class Test {
     /** The maximum distance any ASV can travel between two states */
     public static final double MAX_STEP = 0.001;

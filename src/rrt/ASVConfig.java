@@ -1,4 +1,4 @@
-package problem;
+package rrt;
 
 import java.util.ArrayList;
 import java.util.InputMismatchException;
@@ -14,7 +14,7 @@ import java.awt.geom.Point2D;
  */
 public class ASVConfig {
 	/** The position of each ASV */
-	private List<Point2D> asvPositions = new ArrayList<Point2D>();
+    protected List<Point2D> asvPositions = new ArrayList<Point2D>();
 
 	/**
 	 * Constructor. Takes an array of 2n x and y coordinates, where n is the

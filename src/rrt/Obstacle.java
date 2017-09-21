@@ -1,4 +1,4 @@
-package problem;
+package rrt;
 
 import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
@@ -13,7 +13,7 @@ import java.util.Scanner;
  */
 public class Obstacle {
 	/** Stores the obstacle as a Rectangle2D */
-	private Rectangle2D rect;
+	protected Rectangle2D rect;
 
 	/**
 	 * Constructs an obstacle with the given (x,y) coordinates of the

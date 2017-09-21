@@ -1,4 +1,4 @@
-package problem;
+package rrt;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -23,23 +23,23 @@ import java.util.Scanner;
  */
 public class ProblemSpec {
 	/** True iff a problem is currently loaded */
-	private boolean problemLoaded = false;
+    protected boolean problemLoaded = false;
 	/** True iff a solution is currently loaded */
-	private boolean solutionLoaded = false;
+    protected boolean solutionLoaded = false;
 
 	/** The number of ASVs in each configuration */
-	private int asvCount;
+    protected int asvCount;
 	/** The initial configuration */
-	private ASVConfig initialState;
+    protected ASVConfig initialState;
 	/** The goal configuration */
-	private ASVConfig goalState;
+    protected ASVConfig goalState;
 	/** The obstacles */
-	private List<Obstacle> obstacles;
+    protected List<Obstacle> obstacles;
 
 	/** The path taken in the solution */
-	private List<ASVConfig> path;
+    protected List<ASVConfig> path;
 	/** The cost of the solution */
-	private double solutionCost = 0;
+    protected double solutionCost = 0;
 
 	/**
 	 * Loads a problem from a problem text file.

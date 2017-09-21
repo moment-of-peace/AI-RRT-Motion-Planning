@@ -3,9 +3,7 @@ package rrt;
  * motion planning using bidirectional rapidly exploring random tree
  */
 
-import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
-import java.awt.geom.Rectangle2D;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,280 +11,24 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
-import problem.ASVConfig;
-import problem.Obstacle;
-import problem.ProblemSpec;
-
 public class Main {
     /** The maximum distance any ASV can travel between two states */
     private static final double MAX_STEP = 0.001;
-    /** The minimum allowable boom length */
-    private static final double MIN_BOOM_LENGTH = 0.05;
     /** The maximum allowable boom length */
     private static final double MAX_BOOM_LENGTH = 0.05;
-    /** The workspace bounds */
-    private static final Rectangle2D BOUNDS = new Rectangle2D.Double(0, 0, 1, 1);
     /** The default value for maximum error */
     private static final double DEFAULT_MAX_ERROR = 1e-5;
     
-    private static final double PI=Math.PI;
-    /**
-     * Returns the minimum area required for the given number of ASVs.
-     *
-     * @param asvCount
-     *            the number of ASVs
-     * @return the minimum area required.
-     */
-    private static final double getMinimumArea(int asvCount) {
-        double radius = 0.007 * (asvCount - 1);
-        return Math.PI * radius * radius;
-    }
-
-    /**
-     * Creates a new Rectangle2D that is grown by delta in each direction
-     * compared to the given Rectangle2D.
-     *
-     * @param rect
-     *            the Rectangle2D to expand.
-     * @param delta
-     *            the amount to expand by.
-     * @return a Rectangle2D expanded by delta in each direction.
-     */
-    private static Rectangle2D grow(Rectangle2D rect, double delta) {
-        return new Rectangle2D.Double(rect.getX() - delta, rect.getY() - delta,
-                rect.getWidth() + delta * 2, rect.getHeight() + delta * 2);
-    }
-
-    /** Remembers the specifications of the problem. */
-    private ProblemSpec ps = new ProblemSpec();
-    /** The maximum error allowed by this Tester */
-    private double maxError;
-    /** The workspace bounds, with allowable error. */
-    private Rectangle2D lenientBounds;
-
-    /**
-     * Constructor. Creates a Tester with the default value for maximum error.
-     */
-    public Main() {
-        this(DEFAULT_MAX_ERROR);
-    }
-
-    /**
-     * Constructor. Creates a Tester with the given maximum error.
-     *
-     * @param maxError
-     *            the maximum allowable error.
-     */
-    public Main(double maxError) {
-        this.maxError = maxError;
-        lenientBounds = grow(BOUNDS, maxError);
-    }
-
-    /**
-     * Returns a copy of list where each value is incremented by delta.
-     *
-     * @param list
-     *            the list of integers to add to.
-     * @return a copy of list where each value is incremented by delta.
-     */
-    private List<Integer> addToAll(List<Integer> list, int delta) {
-        List<Integer> result = new ArrayList<Integer>();
-        for (int i : list) {
-            result.add(i + delta);
-        }
-        return result;
-    }
-
-    /**
-     * Returns whether the step from s0 to s1 is a valid primitive step.
-     *
-     * @param cfg0
-     *            A configuration.
-     * @param cfg1
-     *            Another configuration.
-     * @return whether the step from s0 to s1 is a valid primitive step.
-     */
-    private boolean isValidStep(ASVConfig cfg0, ASVConfig cfg1) {
-        return (cfg0.maxDistance(cfg1) <= MAX_STEP + maxError);
-    }
-
-    /**
-     * Returns whether the booms in the given configuration have valid lengths.
-     *
-     * @param cfg
-     *            the configuration to test.
-     * @return whether the booms in the given configuration have valid lengths.
-     */
-    private boolean hasValidBoomLengths(ASVConfig cfg) {
-        List<Point2D> points = cfg.getASVPositions();
-        for (int i = 1; i < points.size(); i++) {
-            Point2D p0 = points.get(i - 1);
-            Point2D p1 = points.get(i);
-            double boomLength = p0.distance(p1);
-            if (boomLength < MIN_BOOM_LENGTH - maxError) {
-                return false;
-            } else if (boomLength > MAX_BOOM_LENGTH + maxError) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Normalises an angle to the range (-pi, pi]
-     *
-     * @param angle
-     *            the angle to normalise.
-     * @return the normalised angle.
-     */
-    private double normaliseAngle(double angle) {
-        while (angle <= -Math.PI) {
-            angle += 2 * Math.PI;
-        }
-        while (angle > Math.PI) {
-            angle -= 2 * Math.PI;
-        }
-        return angle;
-    }
-
-    /**
-     * Returns whether the given configuration is convex.
-     *
-     * @param cfg
-     *            the configuration to test.
-     * @return whether the given configuration is convex.
-     */
-    private boolean isConvex(ASVConfig cfg) {
-        List<Point2D> points = cfg.getASVPositions();
-        points.add(points.get(0));
-        points.add(points.get(1));
-
-        double requiredSign = 0;
-        double totalTurned = 0;
-        Point2D p0 = points.get(0);
-        Point2D p1 = points.get(1);
-        double angle = Math.atan2(p1.getY() - p0.getY(), p1.getX() - p0.getX());
-        for (int i = 2; i < points.size(); i++) {
-            Point2D p2 = points.get(i);
-            double nextAngle = Math.atan2(p2.getY() - p1.getY(),
-                    p2.getX() - p1.getX());
-            double turningAngle = normaliseAngle(nextAngle - angle);
-
-            if (turningAngle == Math.PI) {
-                return false;
-            }
-
-            totalTurned += Math.abs(turningAngle);
-            if (totalTurned > 3 * Math.PI) {
-                return false;
-            }
-
-            double turnSign;
-            if (turningAngle < -maxError) {
-                turnSign = -1;
-            } else if (turningAngle > maxError) {
-                turnSign = 1;
-            } else {
-                turnSign = 0;
-            }
-
-            if (turnSign * requiredSign < 0) {
-                return false;
-            } else if (turnSign != 0) {
-                requiredSign = turnSign;
-            }
-
-            p0 = p1;
-            p1 = p2;
-            angle = nextAngle;
-        }
-        return true;
-    }
-
-    /**
-     * Returns whether the given configuration has sufficient area.
-     *
-     * @param cfg
-     *            the configuration to test.
-     * @return whether the given configuration has sufficient area.
-     */
-    private boolean hasEnoughArea(ASVConfig cfg) {
-        double total = 0;
-        List<Point2D> points = cfg.getASVPositions();
-        points.add(points.get(0));
-        points.add(points.get(1));
-        for (int i = 1; i < points.size() - 1; i++) {
-            total += points.get(i).getX()
-                    * (points.get(i + 1).getY() - points.get(i - 1).getY());
-        }
-        double area = Math.abs(total) / 2;
-        return (area >= getMinimumArea(cfg.getASVCount()) - maxError);
-    }
-
-    /**
-     * Returns whether the given configuration fits wholly within the bounds.
-     *
-     * @param cfg
-     *            the configuration to test.
-     * @return whether the given configuration fits wholly within the bounds.
-     */
-    private boolean fitsBounds(ASVConfig cfg) {
-        for (Point2D p : cfg.getASVPositions()) {
-            if (!lenientBounds.contains(p)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Returns whether the given config collides with any of the given
-     * obstacles.
-     *
-     * @param cfg
-     *            the configuration to test.
-     * @param obstacles
-     *            the obstacles to test against.
-     * @return whether the given config collides with any of the given
-     *         obstacles.
-     */
-    private boolean hasCollision(ASVConfig cfg, List<Obstacle> obstacles) {
-        for (Obstacle o : obstacles) {
-            if (hasCollision(cfg, o)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /**
-     * Returns whether the given config collides with the given obstacle.
-     *
-     * @param cfg
-     *            the configuration to test.
-     * @param o
-     *            the obstacle to test against.
-     * @return whether the given config collides with the given obstacle.
-     */
-    private boolean hasCollision(ASVConfig cfg, Obstacle o) {
-        Rectangle2D lenientRect = grow(o.getRect(), -maxError);
-        List<Point2D> points = cfg.getASVPositions();
-        for (int i = 1; i < points.size(); i++) {
-            if (new Line2D.Double(points.get(i - 1), points.get(i))
-                    .intersects(lenientRect)) {
-                return true;
-            }
-        }
-        return false;
-    }
+    private static final double PI = Math.PI;
         
-    private static int clock;
+    private static int clockwise;
+    
 	public static void main(String[] args) throws IOException {
 		// load problem from a file
-	    String fileName = args[0];
-	    String outputName = "output.txt";  // should be args[1]
-	    Main tester = new Main(DEFAULT_MAX_ERROR);
-	    tester.ps.loadProblem(fileName);System.out.println("obstacle number: " + tester.ps.getObstacles().size());
+	    String srcFile = args[0];
+	    String outputName = args[1];
+	    Test tester = new Test(srcFile);
+	    System.out.println("obstacle number: " + tester.ps.obstacles.size());
 	    
 	    int asvCount = tester.ps.getASVCount();
 	    int dimensions = asvCount + 1; // dimension degree of c space
@@ -300,11 +42,11 @@ public class Main {
 	    Config goalConfig = asvConfigToCfg(tester.ps.getGoalState(),tester);
 	    // clockwise or anti-clockwise
 	    if (initConfig.coords.length > 3 && initConfig.coords[3] < 0) {
-	        clock = -1;
+	        clockwise = -1;
 	    } else {
-	        clock = 1;
+	        clockwise = 1;
 	    }
-	    System.out.println("clock: " + clock);
+	    //System.out.println("clockwise: " + clockwise);
 	    for (double d:initConfig.coords){
 	    	System.out.println(d);
 	    }
@@ -312,6 +54,10 @@ public class Main {
 	    for (double d:goalConfig.coords){
 	    	System.out.println(d);
 	    }
+	    
+	    long time1 = 0;
+	    long time2 = 0;
+	    long start;
 	    
 	    // add initial and goal into hashsets
 	    fromInit.add(initConfig);
@@ -325,7 +71,12 @@ public class Main {
 	    
 	    Config sample, nearest1, nearest2;
 	    int total = 0;
-	    int sam =0;System.out.println("1");
+
+	    FileWriter fw1 = new FileWriter("sample1.txt");
+        FileWriter fw2 = new FileWriter("sample2.txt");
+        FileWriter fw0 = new FileWriter("sample0.txt");
+        fw0.write(19999 + " " + 10 + "\n");
+        
 	    while (!initNext.equals(goalNext)) {
 	        total++;
 	        sample = getRandomPoint(dimensions, angleRange, tester);
@@ -333,27 +84,39 @@ public class Main {
 	        while(!cSpaceCollisionCheck1(asv, tester)) {
 	            sample = getRandomPoint(dimensions, angleRange, tester);
 	            asv = cfgToASVConfig(sample);
-	            sam++;
 	        }//System.out.println("got random");
-	        
+	        if (total < 20000) printPosition(cfgToASVConfig(sample), fw0);
 	        // find nearest configurations from both sides
+	        start = System.currentTimeMillis();
 	        nearest1 = findNearest(fromInit, sample);
 	        nearest2 = findNearest(fromGoal, sample);//System.out.println("found nearest");
+	        time1 = time1 + System.currentTimeMillis() - start;
 	        // get the next configurations for both sides
+	        start = System.currentTimeMillis();
 	        initNext = findNext(sample, nearest1, tester, fromInit);
 	        goalNext = findNext(sample, nearest2, tester, fromGoal);//System.out.println("found next");
-	        //initNext.predecessor = nearest1;
-	        //goalNext.predecessor = nearest2;
-	        // store next configurations
-	        //fromInit.add(initNext);
-	        //fromGoal.add(goalNext);
-	        //System.out.println(sam);
-	        if (total%1000 == 0) System.out.println(total);
+	        time2 = time2 + System.currentTimeMillis() - start;
+	        //if (initNext != nearest1 && goalNext != nearest2) total++;
+	        if (total%1000 == 0) System.out.println(total + " size: " + fromInit.size() + " " + fromGoal.size() + " time: " + time1 + " " + time2);
+	        
+	        if (total == 20000) {
+	            
+	            fw1.write(fromInit.size()-1+" " + 10 + "\n");
+	            fw2.write(fromGoal.size()-1+" " + 10 + "\n");
+	            for (Config c: fromInit) {
+	                printPosition(cfgToASVConfig(c), fw1);
+	            }
+	            for (Config c: fromGoal) {
+                    printPosition(cfgToASVConfig(c), fw2);
+                }
+	            fw1.close();
+	            fw2.close();
+	            fw0.close();
+	        }
 	    }
 	    System.out.println("finished, total configs: " + total);
+	    
 	    FileWriter fw = new FileWriter(outputName);
-	    //fw.write(total + " ");
-	    //fw.write("7\n");
 	    List<ASVConfig> solution = getSol1(initNext,tester);
 	    solution.addAll(getSol2(goalNext,tester));
 	    tester.ps.setPath(solution);
@@ -364,22 +127,9 @@ public class Main {
 	    }
 	    printPosition(tester.ps.getGoalState(),fw);
 	    fw.close();
-	    
-	    /*
-	    int[] sampleResult = {0,0,0,0,0};
-	    for (int i = 0; i < 1000000; i++) {
-	        Config cfg = getRandomPoint(dimensions);
-	        double[] coords=cfgToWSpace(cfg);
-	        ASVConfig asvC=  new ASVConfig(coords);
-	        cSpaceCollisionCheck(asvC,tester, sampleResult);
-	    }
-	    for (int n: sampleResult) {
-	        //System.out.println(n);
-	    }
-	    */
 	}
 	
-	private static List<ASVConfig> getSol1(Config initNext, Main tester) 
+	private static List<ASVConfig> getSol1(Config initNext, Test tester) 
 			throws IOException {
         // TODO Auto-generated method stub
         ArrayList<Config> solution = new ArrayList<Config>();
@@ -395,8 +145,8 @@ public class Main {
             Config start = config;
             if(i!=0){
             	Config result = solution.get(i-1);
-	            while(!validDistance(start,result,tester)){
-	            	while(!validDistance(start, result, tester)){
+	            while(!validDistance(start,result)){
+	            	while(!validDistance(start, result)){
 		        		result = cutDist(start, result);
 		        	}
 	            	sol1.add(cfgToASVConfig(result));
@@ -405,8 +155,8 @@ public class Main {
 	            }
             }else{	        		
         		Config result = initNext;
-            	while(!validDistance(start,result,tester)){
-	            	while(!validDistance(start, result, tester)){
+            	while(!validDistance(start,result)){
+	            	while(!validDistance(start, result)){
 		        		result = cutDist(start, result);
 		        	}
 	            	sol1.add(cfgToASVConfig(result));
@@ -419,7 +169,7 @@ public class Main {
         
      }
 
-    private static List<ASVConfig> getSol2(Config goalNext, Main tester) 
+    private static List<ASVConfig> getSol2(Config goalNext, Test tester) 
     		throws IOException {
         // TODO Auto-generated method stub
     	List<ASVConfig> sol2 = new ArrayList<ASVConfig>();
@@ -428,8 +178,8 @@ public class Main {
         while(goalNext.predecessor!=null){
         	Config start = goalNext;
         	Config result = goalNext.predecessor;
-        	while (!validDistance(start, result, tester)){
-	        	while(!validDistance(start, result, tester)){
+        	while (!validDistance(start, result)){
+	        	while(!validDistance(start, result)){
 	        		result = cutDist(start, result);
 	        	}
 	        	sol2.add(cfgToASVConfig(result));
@@ -473,9 +223,9 @@ public class Main {
     /**
 	 * convert a state from workspace to c space
 	 */
-	private static Config asvConfigToCfg(ASVConfig initialState, Main tester) {
+	private static Config asvConfigToCfg(ASVConfig initialState, Test tester) {
         // TODO Auto-generated method stub
-		List<Point2D> positions = initialState.getASVPositions();
+		List<Point2D> positions = initialState.asvPositions;
 		//length
 		double [] pts = new double [initialState.getASVCount()+1];
 		Point2D p0= positions.get(0);
@@ -502,10 +252,7 @@ public class Main {
      * @param angleRange 
 	 * @return array of C-state
 	 */
-	public static Config getRandomPoint(int dimensions, double[] angleRange, Main tester)
-	{
-	    
-	    Random randP = new Random();
+	private static Config getRandomPoint(int dimensions, double[] angleRange, Test tester) {
 	    boolean flag = true;
 	    int times = 0;
 	    double[] position = new double[(dimensions-1)*2];
@@ -516,39 +263,55 @@ public class Main {
 	        times++;
 	        
 	        // start position
-	        position[0]= randP.nextDouble();
-	        position[1]= randP.nextDouble();
-	        if (position[0] > 0.1 && position[0] < 0.27 && position[1] > 0.1 && position[1] < 0.9) {
-	            times++;
-	        }
+	        getStartPosition(position, tester);
 	        // generate following positions
 	        int i;
 	        for(i = 1; i < dimensions-1; i++) {
 	            pre = getNextPoint(pre, angleRange[i-1], position, i, tester);
 	            if (pre == 10) {
 	                flag = false;
+	                //System.out.println("fail: " + position[0] + " " + position[1]);
 	                break;
 	            }
 	        }
 	        if (flag == true) {
 	            return asvConfigToCfg(new ASVConfig(position), tester);
 	        }
-	        if (times%100 == 0) System.out.println("rand: " + times + " " + i + " "+ position[0] + " " + position[1]);
+	        if (times%50 == 0) System.out.println("rand: " + times + " " + i + " "+ position[0] + " " + position[1]);
 	    }
 	    //return toConfig(new ASVConfig(position), tester);
 	}
 	
-	/**
+	private static void getStartPosition(double[] position, Test tester) {
+	    Random randP = new Random();
+	    Point2D p = new Point2D.Double(randP.nextDouble(), randP.nextDouble());
+	    List<Obstacle> obs = tester.ps.obstacles;
+	    while (containPoint(obs, p)) {
+	        p = new Point2D.Double(randP.nextDouble(), randP.nextDouble());
+	    }
+	    position[0] = p.getX();
+	    position[1] = p.getY();
+    }
+
+    private static boolean containPoint(List<Obstacle> obs, Point2D p) {
+        for (Obstacle o: obs) {
+            if (o.rect.contains(p)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
 	 * generate next random asv position
 	 * @param d
 	 * @param position
 	 * @param i
 	 * @return
 	 */
-	private static double getNextPoint(double pre, double limit, double[] position, int i, Main tester) {
+	private static double getNextPoint(double pre, double limit, double[] position, int i, Test tester) {
         Random rand = new Random();
         int times = 0;
-        boolean flag = false;
         i = i-1;
         
         if (i == 0) {
@@ -565,9 +328,9 @@ public class Main {
         } else {
             while (true && times < 5000) {
                 times++;
-                limit *= clock;
-                double angle = (rand.nextDouble()*(PI-limit)+limit)*clock;
-                angle = PI + pre - angle;
+                limit = limit*clockwise;//*0.75;
+                double angle = (rand.nextDouble()*(PI-limit)+limit)*clockwise;
+                angle = tester.normaliseAngle(PI + pre - angle);
                 position[2*i+2] = position[2*i] + MAX_BOOM_LENGTH * Math.cos(angle);
                 position[2*i+3] = position[2*i+1] + MAX_BOOM_LENGTH * Math.sin(angle);
                 ASVConfig asv = new ASVConfig(cutArray(position, 2*i+3));
@@ -595,7 +358,7 @@ public class Main {
 	 * @param pts array of C-state
 	 * @return array of coords in work space
 	 */
-	public static ASVConfig cfgToASVConfig(Config cfg) {
+	private static ASVConfig cfgToASVConfig(Config cfg) {
 		double[] pts = cfg.coords;
 		
 		double [] cfgArray= new double[2*(pts.length-1)];
@@ -616,23 +379,11 @@ public class Main {
 			j++;
 			//update current theta
 			prevAngle=theta;
-			
-			/*
-			    double x = currentX+MAX_BOOM_LENGTH*Math.cos(theta);
-				double y = currentY+MAX_BOOM_LENGTH*Math.sin(theta);
-				cfgArray[2*j]=x;
-				cfgArray[2*j+1]=y;
-				j++;
-				//update current point
-				currentX=x;
-				currentY=y;
-			 */
-			
 		}
 		return new ASVConfig(cfgArray);
 	}
 	
-	public static void cSpaceCollisionCheck(ASVConfig cfg, Main test, int[] sampleResult){
+	private static void cSpaceCollisionCheck(ASVConfig cfg, Test test, int[] sampleResult){
         boolean flag = true;
 	    if(!test.hasEnoughArea(cfg)){
         	//need other test
@@ -647,7 +398,7 @@ public class Main {
             sampleResult[3]++;
             flag = false;
         } 
-        if (!test.hasCollision(cfg, test.ps.getObstacles())) {
+        if (!test.hasCollision(cfg, test.ps.obstacles)) {
             sampleResult[4]++;
             flag = false;
         }
@@ -655,23 +406,23 @@ public class Main {
             sampleResult[0]++;
         }
  	}
-	public static boolean cSpaceCollisionCheck(ASVConfig cfg, Main test) {
+	private static boolean cSpaceCollisionCheck(ASVConfig cfg, Test test) {
         if(test.hasEnoughArea(cfg) && test.isConvex(cfg) && test.fitsBounds(cfg) 
-                && !test.hasCollision(cfg, test.ps.getObstacles())) {
+                && !test.hasCollision(cfg, test.ps.obstacles)) {
             return true;
         } else {
             return false;
         }
 }
-	public static boolean cSpaceCollisionCheck1(ASVConfig cfg, Main test) {
+	private static boolean cSpaceCollisionCheck1(ASVConfig cfg, Test test) {
 	    if(test.hasEnoughArea(cfg) && test.isConvex(cfg)) {
 	        return true;
 	    } else {
 	        return false;
 	    }
 	}
-	public static boolean cSpaceCollisionCheck2(ASVConfig cfg, Main test) {
-        if(test.fitsBounds(cfg) && !test.hasCollision(cfg, test.ps.getObstacles())) {
+	private static boolean cSpaceCollisionCheck2(ASVConfig cfg, Test test) {
+        if(test.fitsBounds(cfg) && !test.hasCollision(cfg, test.ps.obstacles)) {
             return true;
         } else {
             return false;
@@ -705,7 +456,8 @@ public class Main {
 	 */
     private static double cSpaceDist(double[] array1, double[] array2) {
         double sum = 0;
-        for (int i = 0; i < array1.length; i++) {
+        int n = 1 + array1.length/2;
+        for (int i = 0; i < 2; i++) {
             sum += (array1[i] - array2[i]) * (array1[i] - array2[i]);
         }
         return sum;
@@ -717,21 +469,26 @@ public class Main {
      * @param near: nearest configuration to the sample
      * @return: expanded configuration towards the sample from nearest
      */
-    private static Config findNext(Config sample, Config near, Main tester, HashSet<Config> cfgSet) {
+    private static Config findNext(Config sample, Config near, Test tester, HashSet<Config> cfgSet) {
         Config start = near;
         Config result = sample;
         Config previous = near;
         Config next;
         ASVConfig asv;
         int num = 1;
-        
+         
         // extend towards the sample as far as possible
         while (true) {
+            double step = maxDistance(start, result);
             //int i = 0;
-            while (!validDistance(start, result, tester)) {
+            /*if (!validDistance(start, result)) {
+                result = normDist(start, result);
+            }*/
+            while (step > MAX_STEP) {
                 // scale down, if the next configuration exceeds the step limitation
                 //i++;
-                result = cutDist(start, result);
+                result = cutDist(step, start, result);
+                step = maxDistance(start, result);
                 //if (i%1000 == 0) System.out.println(i);
             }
             //System.out.println("distance ok: " + i);
@@ -740,16 +497,18 @@ public class Main {
             if (!cSpaceCollisionCheck(asv, tester)) {
                 //if (start.equals(sample)) System.out.println("equal");
                 //System.out.println("next ok");
+                //System.out.println("next " + num);
                 return start; // if start is near
-            } else if (validDistance(result, sample, tester)) {
+            } else if (validDistance(result, sample)) {
                 //System.out.println("equal");
                 next = new Config(sample.coords, previous);
                 cfgSet.add(next);
+                //System.out.println("next " + num);
                 return next;
             } else {
                 //System.out.println("next retry");
                 num++;
-                if (num%10 == 0) {
+                if (num%100 == 0) {
                     next = new Config(result.coords, previous);
                     cfgSet.add(next);
                     previous = next;
@@ -758,6 +517,18 @@ public class Main {
                 result = sample;
             }
         }
+    }
+
+    private static Config normDist(Config start, Config end) {
+        double diffx = end.coords[0] - start.coords[0];
+        double diffy = end.coords[1] - start.coords[1];
+        Config result = new Config(end.coords.clone());
+        double scalar = (diffx * diffx + diffy * diffy)/(MAX_STEP*MAX_STEP);
+        
+        scalar = Math.pow(scalar, 0.5);
+        result.coords[0] = start.coords[0] + diffx/scalar;
+        result.coords[1] = start.coords[1] + diffy/scalar;
+        return result;
     }
 
     /**
@@ -772,7 +543,20 @@ public class Main {
         double[] result = new double[coords1.length];
         // scale down
         for (int i = 0; i < coords1.length; i++) {
-            result[i] = coords1[i] + 0.50 * (coords2[i] - coords1[i]);
+            result[i] = coords1[i] + 0.4 * (coords2[i] - coords1[i]);
+        }
+        return new Config(result);
+    }
+    
+    private static Config cutDist(double step, Config start, Config end) {
+        double[] coords1 = start.coords;
+        double[] coords2 = end.coords;
+        double[] result = new double[coords1.length];
+        double scalar = step/MAX_STEP;
+        if (scalar < 1.4) scalar = 1.4;
+        // scale down
+        for (int i = 0; i < coords1.length; i++) {
+            result[i] = coords1[i] + (coords2[i] - coords1[i])/scalar;
         }
         return new Config(result);
     }
@@ -780,11 +564,17 @@ public class Main {
     /**
      * test whether two configurations meet the step size restriction
      */
-    private static boolean validDistance(Config start, Config end, Main tester) {
+    private static boolean validDistance(Config start, Config end) {
         // TODO Auto-generated method stub  
         ASVConfig asv1 = cfgToASVConfig(start);
         ASVConfig asv2 = cfgToASVConfig(end);
-        return tester.isValidStep(asv1, asv2);
+        return asv1.maxDistance(asv2) <= MAX_STEP + DEFAULT_MAX_ERROR;
+    }
+    
+    private static double maxDistance(Config start, Config end) {
+        ASVConfig asv1 = cfgToASVConfig(start);
+        ASVConfig asv2 = cfgToASVConfig(end);
+        return asv1.maxDistance(asv2);
     }
 }
 

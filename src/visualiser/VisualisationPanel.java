@@ -17,9 +17,9 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.Timer;
 
-import problem.Obstacle;
-import problem.ProblemSpec;
-import problem.ASVConfig;
+import rrt.Obstacle;
+import rrt.ProblemSpec;
+import rrt.ASVConfig;
 
 public class VisualisationPanel extends JComponent {
 	/** UID, as required by Swing */
