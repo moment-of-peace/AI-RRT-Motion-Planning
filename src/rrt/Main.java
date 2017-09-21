@@ -328,13 +328,22 @@ public class Main {
 	    int sam =0;System.out.println("1");
 	    while (!initNext.equals(goalNext)) {
 	        total++;
+<<<<<<< HEAD
 	        sample = getRandomPoint(dimensions, angleRange);
 	        ASVConfig asv = cfgToASVConfig(sample);
 	        while(!cSpaceCollisionCheck(asv, tester)) {
 	            sample = getRandomPoint(dimensions, angleRange);
 	            asv = cfgToASVConfig(sample);
+=======
+	        sample = getRandomPoint(dimensions, angleRange, tester);
+	        ASVConfig asv = cfgToWSpace(sample);
+	        while(!cSpaceCollisionCheck1(asv, tester)) {
+	            sample = getRandomPoint(dimensions, angleRange, tester);
+	            asv = cfgToWSpace(sample);
+>>>>>>> yi
 	            sam++;
 	        }//System.out.println("got random");
+	        
 	        // find nearest configurations from both sides
 	        nearest1 = findNearest(fromInit, sample);
 	        nearest2 = findNearest(fromGoal, sample);//System.out.println("found nearest");
@@ -460,10 +469,11 @@ public class Main {
 	private static double[] getAngleRange(Config initConfig, Config goalConfig) {
         double[] initCoords = initConfig.coords;
         double[] goalCoords = goalConfig.coords;
-	    double[] angleRange = new double[initCoords.length-3];
+	    double[] angleRange = new double[initCoords.length-2];
+	    angleRange[0] = 2*PI;
 	    
-	    for (int i = 0; i < angleRange.length; i++) {
-	        angleRange[i] = (initCoords[i+3]<goalCoords[i+3]?initCoords[i+3]:goalCoords[i+3]);
+	    for (int i = 1; i < angleRange.length; i++) {
+	        angleRange[i] = (initCoords[i+2]<goalCoords[i+2]?initCoords[i+2]:goalCoords[i+2]);
 	    }
         return angleRange;
     }
@@ -500,24 +510,95 @@ public class Main {
      * @param angleRange 
 	 * @return array of C-state
 	 */
-	public static Config getRandomPoint(int dimensions, double[] angleRange)
+	public static Config getRandomPoint(int dimensions, double[] angleRange, Main tester)
 	{
-	    double[] pts = new double[dimensions];
+	    
 	    Random randP = new Random();
-	    //start position
-	    pts[0]= randP.nextDouble();
-	    pts[1]= randP.nextDouble();
-	    pts[2]= randP.nextDouble()*2*PI-PI;
-	    //angle
-	    for(int i = 3; i < dimensions; i++) {
-	        double limit = angleRange[i-3];
-	        pts[i] = (randP.nextDouble()*(PI-limit)+limit)*clock;
+	    boolean flag = true;
+	    int times = 0;
+	    double[] position = new double[(dimensions-1)*2];
+	    
+	    while (true) {
+	        double pre = 0;
+	        flag = true;
+	        times++;
+	        
+	        // start position
+	        position[0]= randP.nextDouble();
+	        position[1]= randP.nextDouble();
+	        if (position[0] > 0.1 && position[0] < 0.27 && position[1] > 0.1 && position[1] < 0.9) {
+	            times++;
+	        }
+	        // generate following positions
+	        int i;
+	        for(i = 1; i < dimensions-1; i++) {
+	            pre = getNextPoint(pre, angleRange[i-1], position, i, tester);
+	            if (pre == 10) {
+	                flag = false;
+	                break;
+	            }
+	        }
+	        if (flag == true) {
+	            return toConfig(new ASVConfig(position), tester);
+	        }
+	        if (times%100 == 0) System.out.println("rand: " + times + " " + i + " "+ position[0] + " " + position[1]);
 	    }
-	    Config cfg  = new Config(pts);
-	    return cfg;
+	    //return toConfig(new ASVConfig(position), tester);
 	}
 	
 	/**
+	 * generate next random asv position
+	 * @param d
+	 * @param position
+	 * @param i
+	 * @return
+	 */
+	private static double getNextPoint(double pre, double limit, double[] position, int i, Main tester) {
+        Random rand = new Random();
+        int times = 0;
+        boolean flag = false;
+        i = i-1;
+        
+        if (i == 0) {
+            while (true && times < 5000) {
+                times++;
+                double angle = rand.nextDouble() * 2 * PI;
+                position[2*i+2] = position[2*i] + MAX_BOOM_LENGTH * Math.cos(angle);
+                position[2*i+3] = position[2*i+1] + MAX_BOOM_LENGTH * Math.sin(angle);
+                ASVConfig asv = new ASVConfig(cutArray(position, 2*i+3));
+                if (cSpaceCollisionCheck2(asv, tester)) {
+                    return angle;
+                }
+            }
+        } else {
+            while (true && times < 5000) {
+                times++;
+                limit *= clock;
+                double angle = (rand.nextDouble()*(PI-limit)+limit)*clock;
+                angle = PI + pre - angle;
+                position[2*i+2] = position[2*i] + MAX_BOOM_LENGTH * Math.cos(angle);
+                position[2*i+3] = position[2*i+1] + MAX_BOOM_LENGTH * Math.sin(angle);
+                ASVConfig asv = new ASVConfig(cutArray(position, 2*i+3));
+                if (cSpaceCollisionCheck2(asv, tester)) {
+                    return angle;
+                }
+            }
+        }
+        return 10;
+    }
+
+	/**
+	 * cut an array
+	 */
+    private static double[] cutArray(double[] array, int i) {
+        double[] result = new double[i+1];
+        for (int j = 0; j < i+1; j++) {
+            result[j] = array[j];
+        }
+        return result;
+    }
+
+    /**
 	 * return array of coords in work space where i%2=>y,i+1%2=>x
 	 * @param pts array of C-state
 	 * @return array of coords in work space
@@ -583,13 +664,27 @@ public class Main {
         }
  	}
 	public static boolean cSpaceCollisionCheck(ASVConfig cfg, Main test) {
-	    if(test.hasEnoughArea(cfg) && test.isConvex(cfg) && test.fitsBounds(cfg) 
-	            && !test.hasCollision(cfg, test.ps.getObstacles())) {
+        if(test.hasEnoughArea(cfg) && test.isConvex(cfg) && test.fitsBounds(cfg) 
+                && !test.hasCollision(cfg, test.ps.getObstacles())) {
+            return true;
+        } else {
+            return false;
+        }
+}
+	public static boolean cSpaceCollisionCheck1(ASVConfig cfg, Main test) {
+	    if(test.hasEnoughArea(cfg) && test.isConvex(cfg)) {
 	        return true;
 	    } else {
 	        return false;
 	    }
 	}
+	public static boolean cSpaceCollisionCheck2(ASVConfig cfg, Main test) {
+        if(test.fitsBounds(cfg) && !test.hasCollision(cfg, test.ps.getObstacles())) {
+            return true;
+        } else {
+            return false;
+        }
+    }
 	
 	/**
 	 * retrieve a configuration which is nearest to the sampled configuration
@@ -630,10 +725,12 @@ public class Main {
      * @param near: nearest configuration to the sample
      * @return: expanded configuration towards the sample from nearest
      */
-    private static Config findNext(Config sample, Config near, Main tester) {
+    private static ArrayList<Config> findNext(Config sample, Config near, Main tester) {
         Config start = near;
         Config result = sample;
         ASVConfig asv;
+        ArrayList<Config> next = new ArrayList<Config>();
+        int num = 1;
         
         // extend towards the sample as far as possible
         while (true) {
@@ -650,12 +747,18 @@ public class Main {
             if (!cSpaceCollisionCheck(asv, tester)) {
                 //if (start.equals(sample)) System.out.println("equal");
                 //System.out.println("next ok");
+<<<<<<< HEAD
                 return new Config(start.coords); // if start is near
+=======
+                return next; // if start is near
+>>>>>>> yi
             } else if (validDistance(result, sample, tester)) {
                 //System.out.println("equal");
-                return new Config(sample.coords);
+                next.add(new Config(sample.coords));
+                return next;
             } else {
                 //System.out.println("next retry");
+                next.add(new Config(result.coords));
                 start = result;
                 result = sample;
             }
@@ -674,7 +777,11 @@ public class Main {
         double[] result = new double[coords1.length];
         // scale down
         for (int i = 0; i < coords1.length; i++) {
+<<<<<<< HEAD
             result[i] = coords1[i] + 0.50 * (coords2[i] - coords1[i]);
+=======
+            result[i] = coords2[i] + 0.75 * (coords1[i] - coords2[i]);
+>>>>>>> yi
         }
         return new Config(result);
     }

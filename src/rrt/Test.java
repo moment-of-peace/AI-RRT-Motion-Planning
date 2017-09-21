@@ -275,6 +275,10 @@ public class Test {
         return false;
     }
 
+    public boolean hasCollision(Point2D p, Obstacle o) {
+        
+        return false;
+    }
     /**
      * Checks that the total cost of the solution is correctly calculated.
      */
