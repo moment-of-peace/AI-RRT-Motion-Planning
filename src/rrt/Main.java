@@ -671,16 +671,17 @@ public class Main {
      * @param near: nearest configuration to the sample
      * @return: expanded configuration towards the sample from nearest
      */
-    private static Config findNext(Config sample, Config near, Main tester) {
+    private static ArrayList<Config> findNext(Config sample, Config near, Main tester) {
         Config start = near;
         Config result = sample;
         ASVConfig asv;
-        
+        ArrayList<Config> next = new ArrayList<Config>();
+        int num = 1;
         
         // extend towards the sample as far as possible
         while (true) {
             int i = 0;
-            while (!distOverflow(start, result, tester)) {
+            while (!validDistance(start, result, tester)) {
                 // scale down, if the next configuration exceeds the step limitation
                 i++;
                 result = cutDist(start, result);
@@ -692,12 +693,14 @@ public class Main {
             if (!cSpaceCollisionCheck(asv, tester)) {
                 //if (start.equals(sample)) System.out.println("equal");
                 //System.out.println("next ok");
-                return new Config(start.coords); // if start is near
-            } else if (distOverflow(result, sample, tester)) {
+                return next; // if start is near
+            } else if (validDistance(result, sample, tester)) {
                 //System.out.println("equal");
-                return new Config(sample.coords);
+                next.add(new Config(sample.coords));
+                return next;
             } else {
                 //System.out.println("next retry");
+                next.add(new Config(result.coords));
                 start = result;
                 result = sample;
             }
@@ -724,7 +727,7 @@ public class Main {
     /**
      * test whether two configurations meet the step size restriction
      */
-    private static boolean distOverflow(Config start, Config end, Main tester) {
+    private static boolean validDistance(Config start, Config end, Main tester) {
         // TODO Auto-generated method stub  
         ASVConfig asv1 = cfgToWSpace(start);
         ASVConfig asv2 = cfgToWSpace(end);
