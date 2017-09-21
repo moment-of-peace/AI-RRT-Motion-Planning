@@ -1,4 +1,6 @@
 output.txt
+sample*
+
 # Compiled class file
 *.class
 
