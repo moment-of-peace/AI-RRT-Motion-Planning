@@ -334,7 +334,7 @@ public class Main {
 	            sample = getRandomPoint(dimensions, angleRange, tester);
 	            asv = cfgToWSpace(sample);
 	            sam++;
-	        }System.out.println("got random");
+	        }//System.out.println("got random");
 	        
 	        // find nearest configurations from both sides
 	        nearest1 = findNearest(fromInit, sample);
@@ -464,13 +464,17 @@ public class Main {
 	    int times = 0;
 	    double[] position = new double[(dimensions-1)*2];
 	    
-	    while (true && times < 10000) {
+	    while (true) {
 	        double pre = 0;
+	        flag = true;
 	        times++;
 	        
 	        // start position
 	        position[0]= randP.nextDouble();
 	        position[1]= randP.nextDouble();
+	        if (position[0] > 0.1 && position[0] < 0.27 && position[1] > 0.1 && position[1] < 0.9) {
+	            times++;
+	        }
 	        // generate following positions
 	        int i;
 	        for(i = 1; i < dimensions-1; i++) {
@@ -483,9 +487,9 @@ public class Main {
 	        if (flag == true) {
 	            return toConfig(new ASVConfig(position), tester);
 	        }
-	        if (times%1000 == 0) System.out.println("rand: " + times + " " + i + " "+ position[0] + " " + position[1]);
+	        if (times%100 == 0) System.out.println("rand: " + times + " " + i + " "+ position[0] + " " + position[1]);
 	    }
-	    return toConfig(new ASVConfig(position), tester);
+	    //return toConfig(new ASVConfig(position), tester);
 	}
 	
 	/**
@@ -502,7 +506,7 @@ public class Main {
         i = i-1;
         
         if (i == 0) {
-            while (true && times < 10000) {
+            while (true && times < 5000) {
                 times++;
                 double angle = rand.nextDouble() * 2 * PI;
                 position[2*i+2] = position[2*i] + MAX_BOOM_LENGTH * Math.cos(angle);
@@ -513,7 +517,7 @@ public class Main {
                 }
             }
         } else {
-            while (true && times < 10000) {
+            while (true && times < 5000) {
                 times++;
                 limit *= clock;
                 double angle = (rand.nextDouble()*(PI-limit)+limit)*clock;
@@ -672,6 +676,7 @@ public class Main {
         Config result = sample;
         ASVConfig asv;
         
+        
         // extend towards the sample as far as possible
         while (true) {
             int i = 0;
@@ -711,7 +716,7 @@ public class Main {
         double[] result = new double[coords1.length];
         // scale down
         for (int i = 0; i < coords1.length; i++) {
-            result[i] = coords2[i] + 0.50 * (coords1[i] - coords2[i]);
+            result[i] = coords2[i] + 0.75 * (coords1[i] - coords2[i]);
         }
         return new Config(result);
     }
