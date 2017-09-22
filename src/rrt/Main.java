@@ -75,7 +75,7 @@ public class Main {
 	    FileWriter fw1 = new FileWriter("sample1.txt");
         FileWriter fw2 = new FileWriter("sample2.txt");
         FileWriter fw0 = new FileWriter("sample0.txt");
-        fw0.write(19999 + " " + 10 + "\n");
+        fw0.write(19998 + " " + 10 + "\n");
         
 	    while (!initNext.equals(goalNext)) {
 	        total++;
@@ -95,6 +95,14 @@ public class Main {
 	        start = System.currentTimeMillis();
 	        initNext = findNext(sample, nearest1, tester, fromInit);
 	        goalNext = findNext(sample, nearest2, tester, fromGoal);//System.out.println("found next");
+	        
+	        /*double[] position = initNext.coords;
+	        double[] position2 = sample.coords;
+	        if (position[0] > 0.334 && position[0] < 0.665 && position[1] > 0.485 && position[1] < 0.515) {
+	            System.out.println("sample: " + position2[0] + " " + position2[1]);
+	            System.out.println("extend: " + position[0] + " " + position[1]);
+	        }*/
+	        
 	        time2 = time2 + System.currentTimeMillis() - start;
 	        //if (initNext != nearest1 && goalNext != nearest2) total++;
 	        if (total%1000 == 0) System.out.println(total + " size: " + fromInit.size() + " " + fromGoal.size() + " time: " + time1 + " " + time2);
@@ -255,29 +263,43 @@ public class Main {
 	private static Config getRandomPoint(int dimensions, double[] angleRange, Test tester) {
 	    boolean flag = true;
 	    int times = 0;
-	    double[] position = new double[(dimensions-1)*2];
+	    int in = 0;    //debug
 	    
 	    while (true) {
+	        double[] position = new double[(dimensions-1)*2];
 	        double pre = 0;
 	        flag = true;
 	        times++;
 	        
 	        // start position
 	        getStartPosition(position, tester);
+	        /*if (position[0] > 0.334 && position[0] < 0.665 && position[1] > 0.485 && position[1] < 0.515) {
+	            in++;
+	            //System.out.println("is in");
+	            //System.out.println(position[0] + " " + position[1]);
+	        }*/
 	        // generate following positions
 	        int i;
 	        for(i = 1; i < dimensions-1; i++) {
 	            pre = getNextPoint(pre, angleRange[i-1], position, i, tester);
 	            if (pre == 10) {
 	                flag = false;
+	                in = 0;
 	                //System.out.println("fail: " + position[0] + " " + position[1]);
 	                break;
 	            }
 	        }
 	        if (flag == true) {
+	            /*if (in == 1) {
+	                System.out.println("successful");
+	                System.out.println(position[0] + " " + position[1]);
+	                in = 0;
+	            }*/
 	            return asvConfigToCfg(new ASVConfig(position), tester);
 	        }
-	        if (times%50 == 0) System.out.println("rand: " + times + " " + i + " "+ position[0] + " " + position[1]);
+	        if (times%50 == 0) {
+	            System.out.println("rand: " + times + " " + i + " "+ position[0] + " " + position[1]);
+	        }
 	    }
 	    //return toConfig(new ASVConfig(position), tester);
 	}
@@ -437,12 +459,12 @@ public class Main {
 	 */
 	private static Config findNearest(HashSet<Config> allConfig, Config sample) {
 	    Config result = null;
-	    double dist = Double.POSITIVE_INFINITY;
+	    double dist = Double.NEGATIVE_INFINITY;
 	    double newDist;
 	    
 	    for (Config c: allConfig) {
 	        newDist = cSpaceDist(c.coords, sample.coords);
-	        if (newDist < dist) {
+	        if (newDist > dist) {
 	            dist = newDist;
 	            result = c;
 	        }
@@ -455,12 +477,15 @@ public class Main {
 	 * @require the size of two input arrays should be the same
 	 */
     private static double cSpaceDist(double[] array1, double[] array2) {
-        double sum = 0;
+        double dist = 0;
         int n = 1 + array1.length/2;
         for (int i = 0; i < 2; i++) {
-            sum += (array1[i] - array2[i]) * (array1[i] - array2[i]);
+            dist += (array1[i] - array2[i]) * (array1[i] - array2[i]);
         }
-        return sum;
+        double angleDiff = (array1[2] - array2[2]) * (array1[2] - array2[2]);
+        dist =  1/dist;
+        angleDiff = 8/angleDiff;
+        return dist + angleDiff;
     }
     
     /**
@@ -508,7 +533,7 @@ public class Main {
             } else {
                 //System.out.println("next retry");
                 num++;
-                if (num%100 == 0) {
+                if (num%50 == 0) {
                     next = new Config(result.coords, previous);
                     cfgSet.add(next);
                     previous = next;
