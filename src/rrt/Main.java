@@ -71,6 +71,7 @@ public class Main {
 	    
 	    Config sample, nearest1, nearest2;
 	    int total = 0;
+	    int turn = 1;
 
 	    FileWriter fw1 = new FileWriter("sample1.txt");
         FileWriter fw2 = new FileWriter("sample2.txt");
@@ -79,20 +80,37 @@ public class Main {
         
 	    while (!initNext.equals(goalNext)) {
 	        total++;
-	        sample = getRandomPoint(dimensions, angleRange, tester);
-	        ASVConfig asv = cfgToASVConfig(sample);
-	        while(!cSpaceCollisionCheck1(asv, tester)) {
+	        if (turn == 1) {
 	            sample = getRandomPoint(dimensions, angleRange, tester);
-	            asv = cfgToASVConfig(sample);
-	        }//System.out.println("got random");
+	            ASVConfig asv = cfgToASVConfig(sample);
+	            while(!cSpaceCollisionCheck1(asv, tester)) {
+	                sample = getRandomPoint(dimensions, angleRange, tester);
+	                asv = cfgToASVConfig(sample);
+	            }//System.out.println("got random");
+	        } else if (turn ==2){
+	            sample = getRandomPoint2(dimensions, angleRange, tester);
+	            ASVConfig asv = cfgToASVConfig(sample);
+	            while(!cSpaceCollisionCheck1(asv, tester)) {
+	                sample = getRandomPoint2(dimensions, angleRange, tester);
+	                asv = cfgToASVConfig(sample);
+	            }//System.out.println("got random");
+	        } else {
+	            sample = getRandomPoint3(dimensions, angleRange, tester);
+                ASVConfig asv = cfgToASVConfig(sample);
+                while(!cSpaceCollisionCheck1(asv, tester)) {
+                    sample = getRandomPoint3(dimensions, angleRange, tester);
+                    asv = cfgToASVConfig(sample);
+                }
+	        }
+	        
 	        if (total < 20000) printPosition(cfgToASVConfig(sample), fw0);
 	        // find nearest configurations from both sides
-	        start = System.currentTimeMillis();
-	        nearest1 = findNearest(fromInit, sample);
-	        nearest2 = findNearest(fromGoal, sample);//System.out.println("found nearest");
-	        time1 = time1 + System.currentTimeMillis() - start;
+	        //start = System.currentTimeMillis();
+	        nearest1 = findNearest(fromInit, sample, tester);
+	        nearest2 = findNearest(fromGoal, sample, tester);//System.out.println("found nearest");
+	        //time1 = time1 + System.currentTimeMillis() - start;
 	        // get the next configurations for both sides
-	        start = System.currentTimeMillis();
+	        //start = System.currentTimeMillis();
 	        initNext = findNext(sample, nearest1, tester, fromInit);
 	        goalNext = findNext(sample, nearest2, tester, fromGoal);//System.out.println("found next");
 	        
@@ -103,9 +121,13 @@ public class Main {
 	            System.out.println("extend: " + position[0] + " " + position[1]);
 	        }*/
 	        
-	        time2 = time2 + System.currentTimeMillis() - start;
+	        //time2 = time2 + System.currentTimeMillis() - start;
 	        //if (initNext != nearest1 && goalNext != nearest2) total++;
-	        if (total%1000 == 0) System.out.println(total + " size: " + fromInit.size() + " " + fromGoal.size() + " time: " + time1 + " " + time2);
+	        if (total%1000 == 0) {
+	            turn++;
+	            if (turn == 4) turn = 1;
+	            System.out.println(total + " size: " + fromInit.size() + " " + fromGoal.size());
+	        }
 	        
 	        if (total == 20000) {
 	            
@@ -363,6 +385,39 @@ public class Main {
         }
         return 10;
     }
+	
+	private static double getNextPoint(double pre, double limit, double[] position, int i, Test tester, int clock) {
+        Random rand = new Random();
+        int times = 0;
+        i = i-1;
+        
+        if (i == 0) {
+            while (true && times < 5000) {
+                times++;
+                double angle = rand.nextDouble() * 2 * PI;
+                position[2*i+2] = position[2*i] + MAX_BOOM_LENGTH * Math.cos(angle);
+                position[2*i+3] = position[2*i+1] + MAX_BOOM_LENGTH * Math.sin(angle);
+                ASVConfig asv = new ASVConfig(cutArray(position, 2*i+3));
+                if (cSpaceCollisionCheck2(asv, tester)) {
+                    return angle;
+                }
+            }
+        } else {
+            while (true && times < 5000) {
+                times++;
+                limit = limit*clock;//*0.75;
+                double angle = (rand.nextDouble()*(PI-limit)+limit)*clock;
+                angle = tester.normaliseAngle(PI + pre - angle);
+                position[2*i+2] = position[2*i] + MAX_BOOM_LENGTH * Math.cos(angle);
+                position[2*i+3] = position[2*i+1] + MAX_BOOM_LENGTH * Math.sin(angle);
+                ASVConfig asv = new ASVConfig(cutArray(position, 2*i+3));
+                if (cSpaceCollisionCheck2(asv, tester)) {
+                    return angle;
+                }
+            }
+        }
+        return 10;
+    }
 
 	/**
 	 * cut an array
@@ -404,6 +459,31 @@ public class Main {
 		}
 		return new ASVConfig(cfgArray);
 	}
+	
+	private static double[] cfgToArray(Config cfg) {
+        double[] pts = cfg.coords;
+        
+        double [] cfgArray= new double[2*(pts.length-1)];
+        double currentX=pts[0];
+        double currentY=pts[1];
+        double prevAngle=0;
+        cfgArray[0]=pts[0];
+        cfgArray[1]=pts[1];
+        int j=1;
+        
+        for (int i=2; i<pts.length;i++){
+            //transfer to angle fit coords, need test
+            double theta=PI+prevAngle-pts[i];
+            currentX = currentX+MAX_BOOM_LENGTH*Math.cos(theta);
+            currentY = currentY+MAX_BOOM_LENGTH*Math.sin(theta);
+            cfgArray[2*j]=currentX;
+            cfgArray[2*j+1]=currentY;
+            j++;
+            //update current theta
+            prevAngle=theta;
+        }
+        return cfgArray;
+    }
 	
 	private static void cSpaceCollisionCheck(ASVConfig cfg, Test test, int[] sampleResult){
         boolean flag = true;
@@ -457,13 +537,14 @@ public class Main {
 	 * @param target: the sampled configuration
 	 * @return
 	 */
-	private static Config findNearest(HashSet<Config> allConfig, Config sample) {
+	private static Config findNearest(HashSet<Config> allConfig, Config sample, Test tester) {
 	    Config result = null;
 	    double dist = Double.NEGATIVE_INFINITY;
 	    double newDist;
 	    
 	    for (Config c: allConfig) {
-	        newDist = cSpaceDist(c.coords, sample.coords);
+	        newDist = cSpaceDist(c.coords, sample.coords, tester);
+	        //newDist = cSpaceDist2(c, sample, tester);
 	        if (newDist > dist) {
 	            dist = newDist;
 	            result = c;
@@ -476,16 +557,60 @@ public class Main {
 	 * compute the distance between two arrays
 	 * @require the size of two input arrays should be the same
 	 */
-    private static double cSpaceDist(double[] array1, double[] array2) {
+    private static double cSpaceDist(double[] array1, double[] array2, Test tester) {
         double dist = 0;
+        double diff = 0;
         int n = 1 + array1.length/2;
         for (int i = 0; i < 2; i++) {
             dist += (array1[i] - array2[i]) * (array1[i] - array2[i]);
         }
-        double angleDiff = (array1[2] - array2[2]) * (array1[2] - array2[2]);
-        dist =  1/dist;
-        angleDiff = 8/angleDiff;
-        return dist + angleDiff;
+        
+        /*for (int i = 2; i < n; i++) {
+            double angleDiff = PI - Math.abs(tester.normaliseAngle(array1[2] - array2[2]));
+            diff = diff + (angleDiff*angleDiff);
+        }*/
+        return diff - dist;
+    }
+    private static double cSpaceDist2(Config c, Config sample, Test tester) {
+        double dist = 0;
+        boolean flag = new Random().nextBoolean();
+        if (flag) {
+            double[] array1 = c.coords;
+            double[] array2 = sample.coords;
+            for (int i = 0; i < 2; i++) {
+                dist += (array1[i] - array2[i]) * (array1[i] - array2[i]);
+            }
+        } else {
+            double[] array1 = cfgToArray(c);
+            double[] array2 = cfgToArray(sample);
+            int m;
+            for (int i = 0; i < 2; i++) {
+                m = array1.length - 1 - i;
+                dist += (array1[m] - array2[m]) * (array1[m] - array2[m]);
+            }
+        }
+        
+        /*
+        ASVConfig asv1 = cfgToASVConfig(c);
+        ASVConfig asv2 = cfgToASVConfig(sample);
+        int num = asv1.getASVCount();
+        Point2D pstart = asv1.getASVPositions().get(0);
+        Point2D pend = asv1.getASVPositions().get(num-1);
+        Point2D qstart = asv2.getASVPositions().get(0);
+        Point2D qend = asv2.getASVPositions().get(num-1);
+        
+        double dist =  pstart.distance(qstart);
+        dist += pend.distance(qend);
+        */
+        /*int n = 1 + c.length/2;
+        for (int i = 0; i < 2; i++) {
+            dist += (c[i] - sample[i]) * (c[i] - sample[i]);
+        }*/
+        /*for (int i = 2; i < n; i++) {
+            double angleDiff = PI - Math.abs(tester.normaliseAngle(array1[2] - array2[2]));
+            diff = diff + (angleDiff*angleDiff);
+        }*/
+        return -dist;
     }
     
     /**
@@ -523,6 +648,61 @@ public class Main {
                 //if (start.equals(sample)) System.out.println("equal");
                 //System.out.println("next ok");
                 //System.out.println("next " + num);
+                double[] coords = result.coords.clone();
+                for (int j = 3; j < coords.length; j++) {
+                    coords[j] *= clockwise;
+                    if (coords[j] - PI/180 > 0) {
+                        coords[j] -= PI/180;
+                    }
+                }
+                result = new Config(coords);
+                asv = cfgToASVConfig(result);
+                if (!cSpaceCollisionCheck(asv, tester)) {
+                    for (int j = 3; j < coords.length; j++) {
+                        coords[j] *= clockwise;
+                        if (coords[j] + PI/90 < PI) {
+                            coords[j] += PI/90;
+                        }
+                    }
+                    result = new Config(coords);
+                    asv = cfgToASVConfig(result);
+                    if (cSpaceCollisionCheck(asv, tester)) {
+                        step = maxDistance(start, result);
+                        while (step > MAX_STEP) {
+                            result = cutDist(step, start, result);
+                            step = maxDistance(start, result);
+                        }
+                        result.predecessor = previous;
+                        cfgSet.add(result);
+                        //System.out.println("success");
+                        if (validDistance(result, sample)) {
+                            //System.out.println("equal");
+                            next = new Config(sample.coords, previous);
+                            cfgSet.add(next);
+                            //System.out.println("next " + num);
+                            return next;
+                        }
+                        return result;
+                    }
+                } else {
+                    step = maxDistance(start, result);
+                    while (step > MAX_STEP) {
+                        result = cutDist(step, start, result);
+                        step = maxDistance(start, result);
+                    }
+                    result.predecessor = previous;
+                    cfgSet.add(result);
+                    //System.out.println("success");
+                    if (validDistance(result, sample)) {
+                        //System.out.println("equal");
+                        next = new Config(sample.coords, previous);
+                        cfgSet.add(next);
+                        //System.out.println("next " + num);
+                        return next;
+                    }
+                    return result;
+                }
+                //System.out.println("fail");
                 return start; // if start is near
             } else if (validDistance(result, sample)) {
                 //System.out.println("equal");
@@ -533,7 +713,7 @@ public class Main {
             } else {
                 //System.out.println("next retry");
                 num++;
-                if (num%50 == 0) {
+                if (num%100 == 0) {
                     next = new Config(result.coords, previous);
                     cfgSet.add(next);
                     previous = next;
@@ -600,6 +780,167 @@ public class Main {
         ASVConfig asv1 = cfgToASVConfig(start);
         ASVConfig asv2 = cfgToASVConfig(end);
         return asv1.maxDistance(asv2);
+    }
+    
+    private static Config getRandomPoint2(int dimensions, double[] angleRange, Test tester) {
+        boolean flag = true;
+        int times = 0;
+        int in = 0;    //debug
+        
+        double[] range = angleRange.clone();
+        while (true) {
+            double[] position = new double[(dimensions-1)*2];
+            double pre = 0;
+            flag = true;
+            times++;
+            
+            // start position
+            
+            
+            //getStartPosition(position, tester);
+            
+            
+            getSinCor(position,tester);
+            /*if (position[0] > 0.334 && position[0] < 0.665 && position[1] > 0.485 && position[1] < 0.515) {
+                in++;
+                //System.out.println("is in");
+                //System.out.println(position[0] + " " + position[1]);
+            }*/
+            // generate following positions
+            int i;
+            for(i = 1; i < dimensions-1; i++) {
+                pre = getNextPoint(pre, range[i-1], position, i, tester);
+                if (pre == 10) {
+                    flag = false;
+                    in = 0;
+                    //System.out.println("fail: " + position[0] + " " + position[1]);
+                    break;
+                }
+            }
+            if (flag == true) {
+                /*if (in == 1) {
+                    System.out.println("successful");
+                    System.out.println(position[0] + " " + position[1]);
+                    in = 0;
+                }*/
+                return asvConfigToCfg(new ASVConfig(position), tester);
+            }
+            if (times%50 == 0) {
+                System.out.println("rand: " + times + " " + i + " "+ position[0] + " " + position[1]);
+            }
+        }
+        //return toConfig(new ASVConfig(position), tester);
+    }
+    
+    private static Config getRandomPoint3(int dimensions, double[] angleRange, Test tester) {
+        boolean flag = true;
+        int times = 0;
+        int in = 0;    //debug
+        
+        double[] range = angleRange.clone();
+        for (int j = 1; j < range.length; j++) {
+            range[j] = -angleRange[range.length-j];
+        }
+        while (true) {
+            double[] position = new double[(dimensions-1)*2];
+            double pre = 0;
+            flag = true;
+            times++;
+            
+            // start position
+            
+            
+            //getStartPosition(position, tester);
+            
+            
+            getSinCor(position,tester);
+            /*if (position[0] > 0.334 && position[0] < 0.665 && position[1] > 0.485 && position[1] < 0.515) {
+                in++;
+                //System.out.println("is in");
+                //System.out.println(position[0] + " " + position[1]);
+            }*/
+            // generate following positions
+            int i;
+            for(i = 1; i < dimensions-1; i++) {
+                pre = getNextPoint(pre, range[i-1], position, i, tester, -clockwise);
+                if (pre == 10) {
+                    flag = false;
+                    in = 0;
+                    //System.out.println("fail: " + position[0] + " " + position[1]);
+                    break;
+                }
+            }
+            if (flag == true) {
+                /*if (in == 1) {
+                    System.out.println("successful");
+                    System.out.println(position[0] + " " + position[1]);
+                    in = 0;
+                }*/
+                reversePosition(position);
+                return asvConfigToCfg(new ASVConfig(position), tester);
+            }
+            if (times%50 == 0) {
+                System.out.println("rand: " + times + " " + i + " "+ position[0] + " " + position[1]);
+            }
+        }
+        //return toConfig(new ASVConfig(position), tester);
+    }
+    
+    private static void reversePosition(double[] position) {
+        // TODO Auto-generated method stub
+        double[] temp = position.clone();
+        int l = position.length/2;
+        int m;
+        for (int i = 0; i < l; i++) {
+            m = l - 1 - i;
+            position[2*i] = temp[2*m];
+            position[2*i+1] = temp[2*m+1];
+        }
+    }
+
+    private static List<Obstacle> SampleSpace(List<Obstacle> obs){
+        List<Double> x = new ArrayList<Double>();
+        List<Double> y = new ArrayList<Double>();
+        List<Double> w = new ArrayList<Double>();
+        List<Double> h = new ArrayList<Double>();
+        /*for (Obstacle o: obs){
+            System.out.println(o);
+        }*/
+        //System.out.println("ww");
+        List<Obstacle> rects = new ArrayList<Obstacle>();
+        for (int i=0; i<obs.size();i++){
+            x.add(obs.get(i).getRect().getX());
+            y.add(obs.get(i).getRect().getY());
+            w.add(obs.get(i).getRect().getWidth());
+            h.add(obs.get(i).getRect().getHeight());
+        }
+        for (int i=0, j=1; i<obs.size()-1;i++, j++){
+            //can change to scale
+            double left = x.get(i);
+            double right = x.get(j);
+            if(left==right){
+                //Rectangle2D rect = new Rectangle2D.Double
+                //      (x.get(i), y.get(i)+h.get(i), w.get(i), Math.abs(y.get(j)-y.get(i)-h.get(i)));
+                Obstacle rect = new Obstacle
+                        (x.get(i), y.get(i)+h.get(i), w.get(i), Math.abs(y.get(j)-y.get(i)-h.get(i)));
+                rects.add(rect);
+                //System.out.println(rect);
+            }
+        }
+        return rects;
+    }
+    
+    private static void getSinCor(double[] position, Test tester) {
+        Random randP = new Random();
+        Point2D p = new Point2D.Double(randP.nextDouble(), randP.nextDouble());
+        List<Obstacle> obs = tester.ps.obstacles;
+        List<Obstacle> rects = SampleSpace(obs);
+        while (!containPoint(rects, p)) {
+            p = new Point2D.Double(randP.nextDouble(), randP.nextDouble());
+        }
+        
+        position[0] = p.getX();
+        position[1] = p.getY();
     }
 }
 
