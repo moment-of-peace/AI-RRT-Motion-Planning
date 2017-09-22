@@ -17,7 +17,7 @@ public class Main {
     /** The maximum allowable boom length */
     private static final double MAX_BOOM_LENGTH = 0.05;
     /** The default value for maximum error */
-    private static final double DEFAULT_MAX_ERROR = -(1e-5);
+    private static final double DEFAULT_MAX_ERROR = (1e-5);
     
     private static final double PI = Math.PI;
         
@@ -29,6 +29,11 @@ public class Main {
         String outputName = args[1];
         Test tester = new Test(srcFile);
         int obsNum = tester.ps.obstacles.size();
+        if (obsNum > 2) {
+            for (Obstacle o: tester.ps.obstacles) {
+                o.rect = Test.grow(o.rect, DEFAULT_MAX_ERROR);
+            }
+        }
         
         int asvCount = tester.ps.getASVCount();
         int dimensions = asvCount + 1; // dimension degree of c space
