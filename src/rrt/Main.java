@@ -798,7 +798,7 @@ public class Main {
         // TODO Auto-generated method stub  
         ASVConfig asv1 = cfgToASVConfig(start);
         ASVConfig asv2 = cfgToASVConfig(end);
-        return asv1.maxDistance(asv2) <= MAX_STEP + DEFAULT_MAX_ERROR;
+        return asv1.maxDistance(asv2) <= MAX_STEP - DEFAULT_MAX_ERROR;
     }
     
     private static double maxDistance(Config start, Config end) {
