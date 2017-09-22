@@ -166,7 +166,9 @@ public class Main {
         // TODO Auto-generated method stub
         ArrayList<Config> solution = new ArrayList<Config>();
         List<ASVConfig> sol1 = new ArrayList<ASVConfig>();
+        //solution.add(initNext);
         Config pred = initNext.predecessor;
+        
         while (pred != null) {
             solution.add(pred);
             pred = pred.predecessor;
