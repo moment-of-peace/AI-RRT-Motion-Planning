@@ -23,6 +23,8 @@ public class Main {
         
     private static int clockwise;
     private static int total = 0;
+    private static int recurrent = 0;
+    private static int recurrentflag = 6;
     public static void main(String[] args) throws IOException {
         // load problem from a file
         String srcFile = args[0];
@@ -204,8 +206,8 @@ public class Main {
         for (int i = solution.size()-1; i > 0; i--) {
             Config start = solution.get(i);
             Config result = solution.get(i-1);
-            double step = maxDistance(start, result);
-            /*while(step > MAX_STEP) {
+            /*double step = maxDistance(start, result);
+            while(step > MAX_STEP) {
                 while(step > MAX_STEP){
                     result = cutDist(step, start, result);
                     step = maxDistance(start, result);
@@ -236,8 +238,8 @@ public class Main {
             config = solution.get(i);
             Config start = config;
             Config result = solution.get(i-1);
-            double step = maxDistance(start, result);
-            /*while(step > MAX_STEP) {
+            /*double step = maxDistance(start, result);
+            while(step > MAX_STEP) {
                 while(step > MAX_STEP){
                     result = cutDist(step, start, result);
                     step = maxDistance(start, result);
@@ -711,25 +713,34 @@ public class Main {
     }
     // version 2 of findNext
     private static Config findNext2(Config end, Config start, Test tester, HashSet<Config> cfgSet, FileWriter fw) throws IOException {
+        /*recurrent++;
+        if (recurrent > 5) {
+            recurrent = 0;
+            return start;
+        }*/
+        //System.out.println("findnext s");
         int num = 0;
         //Config previous = start;
-        Config x;
+        //Config x;
         //Config x_temp = start;
-        Config y = start;
+        //Config y = start;
         Config y_temp = start;
         while (true) {
+            //System.out.println("findnext while");
             num++;
-            x = stepMove(y, end, tester, fw, cfgSet, 0);
-            printPosition(cfgToASVConfig(x), fw);
-            y = stepMove(x, end, tester, fw, cfgSet, 1);
-            printPosition(cfgToASVConfig(y), fw);
+            Config x = stepMove(y_temp, end, tester, fw, cfgSet, 0);
+            //printPosition(cfgToASVConfig(x), fw);
+            Config y = stepMove(x, end, tester, fw, cfgSet, 1);
+            //printPosition(cfgToASVConfig(y), fw);
             if (x.equals(y_temp) && y.equals(x)) {
                 Config result = new Config(y.coords, start);
                 //cfgSet.add(result);
+                //System.out.println("findnext e1");
                 return result;
             } else if (y.equals(end)) {
                 Config result = new Config(y.coords, start);
                 //cfgSet.add(result);
+                //System.out.println("findnext e2");
                 return result;
             }
             /* record intermediate c-space states every 100 times to reduce the time
@@ -751,29 +762,47 @@ public class Main {
      */
     private static Config stepMove(Config start, Config end, Test tester, FileWriter fw,
             HashSet<Config> cfgSet, int direction) throws IOException {
+        //System.out.println("move s");
         end = new Config(end.coords);
-        double step = maxDistance(start, end, direction);
+        //double step = maxDistance(start, end, direction);
+        double step = maxDistance(start, end);
         // cut the distance until the step size is valid
         while (step > MAX_STEP) {
+            //System.out.println("move while s");
             end = cutDist2(step, start, end, direction);
-            step = maxDistance(start, end, direction);
+            //step = maxDistance(start, end, direction);
+            step = maxDistance(start, end);
         }
+        //System.out.println("move while e");
         ASVConfig asv = cfgToASVConfig(end);
         if (cSpaceCollisionCheck(asv, tester)) {
+            //System.out.println("move e1");
             return end;
         } else {
             Config trans = increaseAngle(end, tester);
             if (trans != null) {
+                //System.out.println("move findnext s " + direction);
                 fw.flush();
                 //start.predecessor = previous;
                 //cfgSet.add(start);
-                Config result = findNext2(trans, start, tester, cfgSet, fw);
+                printPosition(cfgToASVConfig(start), fw);
+                printPosition(cfgToASVConfig(trans), fw);
+                recurrent++;
+                Config result;
+                if (recurrent < 2) {
+                    result = findNext2(trans, start, tester, cfgSet, fw);
+                } else {
+                    result = start;
+                }
                 //previous.coords = result.coords;
                 //previous.predecessor = result.predecessor;
                 fw.flush();
+                //System.out.println("move findnext e2 " + direction);
+                recurrent--;
                 return result;
             }
         }
+        //System.out.println("move e3");
         return start;
     }
 
