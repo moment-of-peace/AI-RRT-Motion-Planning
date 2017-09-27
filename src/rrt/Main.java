@@ -22,7 +22,7 @@ public class Main {
     private static final double PI = Math.PI;
         
     private static int clockwise;
-    
+    private static int total = 0;
     public static void main(String[] args) throws IOException {
         // load problem from a file
         String srcFile = args[0];
@@ -31,7 +31,7 @@ public class Main {
         int obsNum = tester.ps.obstacles.size();
         if (obsNum > 2) {
             for (Obstacle o: tester.ps.obstacles) {
-                o.rect = Test.grow(o.rect, DEFAULT_MAX_ERROR);
+                o.rect = Test.grow(o.rect, 2e-5);
             }
         }
         
@@ -63,24 +63,24 @@ public class Main {
         Config goalNext = goalConfig;
         
         Config sample, nearest1, nearest2;
-        int total = 0;
-        int turn = 1;
-/*
+        int turn = 0;
+
         FileWriter fw1 = new FileWriter("sample1.txt");
         FileWriter fw2 = new FileWriter("sample2.txt");
         FileWriter fw0 = new FileWriter("sample0.txt");
         fw0.write(19998 + " " + 10 + "\n");
-*/        
+        //FileWriter fwr = new FileWriter("sample-raw.txt");
+        
         while (!initNext.equals(goalNext)) {
             total++;
-            if (obsNum != 2 || turn == 1) {
+            if (obsNum != 2 || turn < 3) {
                 sample = getRandomPoint(dimensions, angleRange, tester);
                 ASVConfig asv = cfgToASVConfig(sample);
                 while(!cSpaceCollisionCheck1(asv, tester)) {
                     sample = getRandomPoint(dimensions, angleRange, tester);
                     asv = cfgToASVConfig(sample);
                 }//System.out.println("got random");
-            } else if (turn ==2){
+            } else if (turn < 6){
                 sample = getRandomPoint2(dimensions, angleRange, tester);
                 ASVConfig asv = cfgToASVConfig(sample);
                 while(!cSpaceCollisionCheck1(asv, tester)) {
@@ -96,16 +96,35 @@ public class Main {
                 }
             }
             
-            //if (total < 20000) printPosition(cfgToASVConfig(sample), fw0);
+            if (total < 20000) {
+                printPosition(cfgToASVConfig(sample), fw0);
+                /*for (double d: sample.coords) {
+                    fwr.write(d + " ");
+                }
+                fwr.write("\n");*/
+            }
             // find nearest configurations from both sides
-            //start = System.currentTimeMillis();
-            nearest1 = findNearest(fromInit, sample, tester);
-            nearest2 = findNearest(fromGoal, sample, tester);//System.out.println("found nearest");
-            //time1 = time1 + System.currentTimeMillis() - start;
-            // get the next configurations for both sides
-            //start = System.currentTimeMillis();
-            initNext = findNext(sample, nearest1, tester, fromInit);
-            goalNext = findNext(sample, nearest2, tester, fromGoal);//System.out.println("found next");
+            if (turn%3 == 1) {
+                nearest1 = findNearest(fromInit, sample, tester);
+                initNext = findNext2(sample, nearest1, tester, fromInit);
+                nearest2 = findNearest(fromGoal, initNext, tester);//System.out.println("found nearest");
+                goalNext = findNext2(initNext, nearest2, tester, fromGoal);//System.out.println("found next");
+            } else if (turn%3 == 2) {
+                nearest2 = findNearest(fromGoal, sample, tester);//System.out.println("found nearest");
+                goalNext = findNext2(sample, nearest2, tester, fromGoal);//System.out.println("found next");
+                nearest1 = findNearest(fromInit, goalNext, tester);
+                initNext = findNext2(goalNext, nearest1, tester, fromInit);
+            } else {
+                //start = System.currentTimeMillis();
+                nearest1 = findNearest(fromInit, sample, tester);
+                nearest2 = findNearest(fromGoal, sample, tester);//System.out.println("found nearest");
+                //time1 = time1 + System.currentTimeMillis() - start;
+                // get the next configurations for both sides
+                //start = System.currentTimeMillis();
+                initNext = findNext2(sample, nearest1, tester, fromInit);
+                goalNext = findNext2(sample, nearest2, tester, fromGoal);//System.out.println("found next");
+                
+            }
             
             /*double[] position = initNext.coords;
             double[] position2 = sample.coords;
@@ -116,12 +135,13 @@ public class Main {
             
             //time2 = time2 + System.currentTimeMillis() - start;
             //if (initNext != nearest1 && goalNext != nearest2) total++;
-            if (total%1000 == 0) {
+            if (total%500 == 0) {
                 turn++;
-                if (turn == 4) turn = 1;
-                System.out.println("samples: " + total);
+                if (turn == 8) turn = 0;
+                //System.out.println("samples: " + total);
             }
-            /*
+            if (total%10 == 0) System.out.println("samples: " + total);
+            
             if (total == 20000) {
                 
                 fw1.write(fromInit.size()-1+" " + 10 + "\n");
@@ -135,10 +155,9 @@ public class Main {
                 fw1.close();
                 fw2.close();
                 fw0.close();
-            }*/
+            }
         }
         System.out.println("finished, total samples: " + total);
-        
         //record the whole path between initial and goal
         FileWriter fw = new FileWriter(outputName);
         List<ASVConfig> solution = new ArrayList<ASVConfig>();
@@ -156,14 +175,7 @@ public class Main {
         }
         fw.close();
         System.out.println("output file generated\n");
-        /*
-        for (int j = 0; j < solution.size()-1; j++) {
-            double step = solution.get(j).maxDistance(solution.get(j+1));
-            if (step > MAX_STEP) {
-                System.out.println(j + ": " + step);
-            }
-        }
-        */
+        
     }
     
     private static List<ASVConfig> getSol1(Config initNext, Test tester) 
@@ -178,37 +190,21 @@ public class Main {
             solution.add(pred);
             pred = pred.predecessor;
         }
-        for (int i = solution.size()-1; i > -1; i--) {
+        for (int i = solution.size()-1; i > 0; i--) {
             Config start = solution.get(i);
-            if(i!=0){
-                Config result = solution.get(i-1);
-                double step = maxDistance(start, result);
-                while(step > MAX_STEP) {
-                    while(step > MAX_STEP){
-                        result = cutDist(step, start, result);
-                        step = maxDistance(start, result);
-                    }
-                    sol1.add(cfgToASVConfig(result));
-                    start=result;
-                    result=solution.get(i-1);
+            Config result = solution.get(i-1);
+            double step = maxDistance(start, result);
+            /*while(step > MAX_STEP) {
+                while(step > MAX_STEP){
+                    result = cutDist(step, start, result);
                     step = maxDistance(start, result);
                 }
                 sol1.add(cfgToASVConfig(result));
-            }else{                  
-                Config result = initNext;
-                double step = maxDistance(start, result);
-                while(step > MAX_STEP) {
-                    while(step > MAX_STEP){
-                        result = cutDist(step, start, result);
-                        step = maxDistance(start, result);
-                    }
-                    sol1.add(cfgToASVConfig(result));
-                    start=result;
-                    result=initNext;
-                    step = maxDistance(start, result);
-                }
-                sol1.add(cfgToASVConfig(result));
-            }
+                start=result;
+                result=solution.get(i-1);
+                step = maxDistance(start, result);
+            }*/
+            sol1.add(cfgToASVConfig(result));
         }
         return sol1;
      }
@@ -218,47 +214,30 @@ public class Main {
         // TODO Auto-generated method stub
         ArrayList<Config> solution = new ArrayList<Config>();
         List<ASVConfig> sol2 = new ArrayList<ASVConfig>();
-        
+        solution.add(goalNext);
         Config pred = goalNext.predecessor;
         while (pred != null) {
             solution.add(pred);
             pred = pred.predecessor;
         }
         Config config;
-        for (int i = solution.size()-1; i > -1; i--) {
+        for (int i = solution.size()-1; i > 0; i--) {
             config = solution.get(i);
             Config start = config;
-            if(i!=0){
-                Config result = solution.get(i-1);
-                double step = maxDistance(start, result);
-                while(step > MAX_STEP) {
-                    while(step > MAX_STEP){
-                        result = cutDist(step, start, result);
-                        step = maxDistance(start, result);
-                    }
-                    sol2.add(cfgToASVConfig(result));
-                    start=result;
-                    result=solution.get(i-1);
+            Config result = solution.get(i-1);
+            double step = maxDistance(start, result);
+            /*while(step > MAX_STEP) {
+                while(step > MAX_STEP){
+                    result = cutDist(step, start, result);
                     step = maxDistance(start, result);
                 }
                 sol2.add(cfgToASVConfig(result));
-            }else{                  
-                Config result = goalNext;
-                double step = maxDistance(start, result);
-                while(step > MAX_STEP) {
-                    while(step > MAX_STEP){
-                        result = cutDist(step, start, result);
-                        step = maxDistance(start, result);
-                    }
-                    sol2.add(cfgToASVConfig(result));
-                    start=result;
-                    result=goalNext;
-                    step = maxDistance(start, result);
-                }
-                sol2.add(cfgToASVConfig(result));
-            }
+                start=result;
+                result=solution.get(i-1);
+                step = maxDistance(start, result);
+            }*/
+            sol2.add(cfgToASVConfig(result));
         }
-        sol2.add(cfgToASVConfig(goalNext));
         List<ASVConfig> reverse = new ArrayList<ASVConfig>();
         int len = sol2.size();
         for (int i = 0; i < len; i++) {
@@ -584,7 +563,7 @@ public class Main {
         double newDist;
         
         for (Config c: allConfig) {
-            newDist = cSpaceDist(c.coords, sample.coords, tester);
+            newDist = cSpaceDist2(c.coords, sample.coords, tester);
             //newDist = cSpaceDist2(c, sample, tester);
             if (newDist > dist) {
                 dist = newDist;
@@ -607,46 +586,18 @@ public class Main {
         }
         return diff - dist;
     }
-    private static double cSpaceDist2(Config c, Config sample, Test tester) {
+    private static double cSpaceDist2(double[] array1, double[] array2, Test tester) {
         double dist = 0;
-        boolean flag = new Random().nextBoolean();
-        if (flag) {
-            double[] array1 = c.coords;
-            double[] array2 = sample.coords;
-            for (int i = 0; i < 2; i++) {
-                dist += (array1[i] - array2[i]) * (array1[i] - array2[i]);
-            }
-        } else {
-            double[] array1 = cfgToArray(c);
-            double[] array2 = cfgToArray(sample);
-            int m;
-            for (int i = 0; i < 2; i++) {
-                m = array1.length - 1 - i;
-                dist += (array1[m] - array2[m]) * (array1[m] - array2[m]);
+        for (int i = 0; i < 2; i++) {
+            dist += (array1[i] - array2[i]) * (array1[i] - array2[i]);
+            if (total%2 == 1) {
+                double angleDiff = Math.abs(tester.normaliseAngle(array1[2] - array2[2]));
+                if (angleDiff > 1) {
+                    dist *= 10000;
+                }
             }
         }
-        
-        /*
-        ASVConfig asv1 = cfgToASVConfig(c);
-        ASVConfig asv2 = cfgToASVConfig(sample);
-        int num = asv1.getASVCount();
-        Point2D pstart = asv1.getASVPositions().get(0);
-        Point2D pend = asv1.getASVPositions().get(num-1);
-        Point2D qstart = asv2.getASVPositions().get(0);
-        Point2D qend = asv2.getASVPositions().get(num-1);
-        
-        double dist =  pstart.distance(qstart);
-        dist += pend.distance(qend);
-        */
-        /*int n = 1 + c.length/2;
-        for (int i = 0; i < 2; i++) {
-            dist += (c[i] - sample[i]) * (c[i] - sample[i]);
-        }*/
-        /*for (int i = 2; i < n; i++) {
-            double angleDiff = PI - Math.abs(tester.normaliseAngle(array1[2] - array2[2]));
-            diff = diff + (angleDiff*angleDiff);
-        }*/
-        return -dist;
+        return - dist;
     }
     
     /**
@@ -657,7 +608,7 @@ public class Main {
      */
     private static Config findNext(Config sample, Config near, Test tester, HashSet<Config> cfgSet) {
         Config start = near;
-        Config result = sample;
+        Config end = sample;
         Config previous = near;
         Config next;
         ASVConfig asv;
@@ -665,113 +616,170 @@ public class Main {
          
         // extend towards the sample as far as possible
         while (true) {
-            double step = maxDistance(start, result);
-            //int i = 0;
-            /*if (!validDistance(start, result)) {
-                result = normDist(start, result);
-            }*/
+            double step = maxDistance(start, end);
             while (step > MAX_STEP) {
                 // scale down, if the next configuration exceeds the step limitation
-                //i++;
-                result = cutDist(step, start, result);
-                step = maxDistance(start, result);
-                //if (i%1000 == 0) System.out.println(i);
+                end = cutDist(step, start, end);
+                step = maxDistance(start, end);
             }
-            //System.out.println("distance ok: " + i);
             // if the next configuration touches collision space, break loop
-            asv = cfgToASVConfig(result);
+            asv = cfgToASVConfig(end);
             if (!cSpaceCollisionCheck(asv, tester)) {
-                //if (start.equals(sample)) System.out.println("equal");
-                //System.out.println("next ok");
-                //System.out.println("next " + num);
-                double[] coords = result.coords.clone();
+                double[] coords = end.coords.clone();
                 for (int j = 3; j < coords.length; j++) {
                     coords[j] *= clockwise;
-                    if (coords[j] - PI/180 > 0) {
-                        coords[j] -= PI/180;
+                    if (coords[j] + PI/180 < PI) {
+                        coords[j] += PI/180;
                     }
+                    coords[j] *= clockwise;
                 }
-                result = new Config(coords);
-                asv = cfgToASVConfig(result);
+                end = new Config(coords);
+                asv = cfgToASVConfig(end);
                 if (!cSpaceCollisionCheck(asv, tester)) {
                     for (int j = 3; j < coords.length; j++) {
                         coords[j] *= clockwise;
-                        if (coords[j] + PI/90 < PI) {
-                            coords[j] += PI/90;
+                        if (coords[j] - PI/90 > 0) {
+                            coords[j] -= PI/90;
                         }
+                        coords[j] *= clockwise;
                     }
-                    result = new Config(coords);
-                    asv = cfgToASVConfig(result);
+                    end = new Config(coords);
+                    asv = cfgToASVConfig(end);
                     if (cSpaceCollisionCheck(asv, tester)) {
-                        step = maxDistance(start, result);
+                        step = maxDistance(start, end);
                         while (step > MAX_STEP) {
-                            result = cutDist(step, start, result);
-                            step = maxDistance(start, result);
+                            end = cutDist(step, start, end);
+                            step = maxDistance(start, end);
                         }
-                        result.predecessor = previous;
-                        cfgSet.add(result);
-                        //System.out.println("success");
-                        if (validDistance(result, sample)) {
-                            //System.out.println("equal");
-                            next = new Config(sample.coords, previous);
-                            cfgSet.add(next);
-                            //System.out.println("next " + num);
-                            return next;
+                        if (cSpaceCollisionCheck(cfgToASVConfig(end), tester)) {
+                            end.predecessor = previous;
+                            
+                            cfgSet.add(end);
+                            if (validDistance(end, sample)) {
+                                next = new Config(sample.coords, previous);
+                                cfgSet.add(next);
+                                return next;
+                            }
+                            return end;
                         }
-                        return result;
                     }
                 } else {
-                    step = maxDistance(start, result);
+                    step = maxDistance(start, end);
                     while (step > MAX_STEP) {
-                        result = cutDist(step, start, result);
-                        step = maxDistance(start, result);
+                        end = cutDist(step, start, end);
+                        step = maxDistance(start, end);
                     }
-                    result.predecessor = previous;
-                    cfgSet.add(result);
-                    //System.out.println("success");
-                    if (validDistance(result, sample)) {
-                        //System.out.println("equal");
-                        next = new Config(sample.coords, previous);
-                        cfgSet.add(next);
-                        //System.out.println("next " + num);
-                        return next;
+                    if (cSpaceCollisionCheck(cfgToASVConfig(end), tester)) {
+                        end.predecessor = previous;
+                        
+                        cfgSet.add(end);
+                        if (validDistance(end, sample)) {
+                            next = new Config(sample.coords, previous);
+                            cfgSet.add(next);
+                            return next;
+                        }
+                        return end;
                     }
-                    return result;
                 }
-                //System.out.println("fail");
                 return start; // if start is near
-            } else if (validDistance(result, sample)) {
-                //System.out.println("equal");
+            } else if (validDistance(end, sample)) {
                 next = new Config(sample.coords, previous);
                 cfgSet.add(next);
-                //System.out.println("next " + num);
                 return next;
             } else {
-                //System.out.println("next retry");
                 num++;
                 if (num%100 == 0) {
-                    next = new Config(result.coords, previous);
+                    next = new Config(end.coords, previous);
                     cfgSet.add(next);
                     previous = next;
                 }
-                start = result;
-                result = sample;
+                start = end;
+                end = sample;
             }
         }
     }
-/*
-    private static Config normDist(Config start, Config end) {
-        double diffx = end.coords[0] - start.coords[0];
-        double diffy = end.coords[1] - start.coords[1];
-        Config result = new Config(end.coords.clone());
-        double scalar = (diffx * diffx + diffy * diffy)/(MAX_STEP*MAX_STEP);
-        
-        scalar = Math.pow(scalar, 0.5);
-        result.coords[0] = start.coords[0] + diffx/scalar;
-        result.coords[1] = start.coords[1] + diffy/scalar;
-        return result;
+    // version 2 of findNext
+    private static Config findNext2(Config end, Config start, Test tester, HashSet<Config> cfgSet) {
+        int num = 0;
+        Config previous = start;
+        Config x;
+        //Config x_temp = start;
+        Config y = start;
+        Config y_temp = start;
+        while (true) {
+            num++;
+            x = stepMove(y, end, previous, tester, cfgSet, 0);
+            y = stepMove(x, end, previous, tester, cfgSet, 1);
+            if (x.equals(y_temp) && y.equals(x)) {
+                Config result = new Config(y.coords, previous);
+                cfgSet.add(result);
+                return result;
+            } else if (y.equals(end)) {
+                Config result = new Config(y.coords, previous);
+                cfgSet.add(result);
+                return result;
+            }
+            /* record intermediate c-space states every 100 times to reduce the time
+            spent on finding the nearest state */
+            if (num%100 == 0) {
+                Config result = new Config(y.coords, previous);
+                cfgSet.add(result);
+                previous = result;
+            }
+            //x_temp = x;
+            y_temp = y;
+        }
     }
-*/
+    
+    /**
+     * move horizontally or vertically within one step size
+     * @param direction: 0 and 1 means move horizontally and vertically respectively
+     */
+    private static Config stepMove(Config start, Config end, Config previous, Test tester, 
+            HashSet<Config> cfgSet, int direction) {
+        double step = maxDistance(start, end, direction);
+        // cut the distance until the step size is valid
+        while (step > MAX_STEP) {
+            end = cutDist2(step, start, end, direction);
+            step = maxDistance(start, end, direction);
+        }
+        ASVConfig asv = cfgToASVConfig(end);
+        if (cSpaceCollisionCheck(asv, tester)) {
+            return end;
+        } else {
+            Config trans = increaseAngle(end, tester);
+            if (trans != null) {
+                start.predecessor = previous;
+                cfgSet.add(start);
+                Config result = findNext2(trans, start, tester, cfgSet);
+                previous.coords = result.coords;
+                previous.predecessor = result.predecessor;
+                return previous;
+            }
+        }
+        return start;
+    }
+
+    private static Config increaseAngle(Config cfg, Test tester) {
+        double[] coords = cfg.coords.clone();
+        // increase the angles by pi/270 at each step
+        for (int i = 0; i < 10; i++) {
+            for (int j = 3; j < coords.length; j++) {
+                coords[j] *= clockwise;
+                if (coords[j] + PI/270 < PI) {
+                    coords[j] += PI/270;
+                }
+                coords[j] *= clockwise;
+            }
+            cfg = new Config(coords);
+            if (cSpaceCollisionCheck(cfgToASVConfig(cfg), tester)) {
+                return cfg;
+            }
+        }
+        // if no valid c-space state is found, return null
+        return null;
+    }
+
     /**
      * scale down the distance by a fixed factor
      * @param start
@@ -786,6 +794,20 @@ public class Main {
         if (scalar < 1.4) scalar = 1.4;
         // scale down
         for (int i = 0; i < coords1.length; i++) {
+            result[i] = coords1[i] + (coords2[i] - coords1[i])/scalar;
+        }
+        return new Config(result);
+    }
+    private static Config cutDist2(double step, Config start, Config end, int direction) {
+        double[] coords1 = start.coords;
+        double[] coords2 = end.coords;
+        double[] result = new double[coords1.length];
+        double scalar = step/MAX_STEP;
+        if (scalar < 1.4) scalar = 1.4;
+        
+        result[direction] = coords1[direction] + (coords2[direction] - coords1[direction])/scalar;
+        result[1-direction] = coords1[1-direction];
+        for (int i = 2; i < coords1.length; i++) {
             result[i] = coords1[i] + (coords2[i] - coords1[i])/scalar;
         }
         return new Config(result);
@@ -805,6 +827,11 @@ public class Main {
         ASVConfig asv1 = cfgToASVConfig(start);
         ASVConfig asv2 = cfgToASVConfig(end);
         return asv1.maxDistance(asv2);
+    }
+    private static double maxDistance(Config start, Config end, int d) {
+        ASVConfig asv1 = cfgToASVConfig(start);
+        ASVConfig asv2 = cfgToASVConfig(end);
+        return asv1.maxDistance(asv2, d);
     }
     
     private static void reversePosition(double[] position) {

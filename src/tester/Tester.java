@@ -397,6 +397,7 @@ public class Tester {
         List<Integer> badStates = new ArrayList<Integer>();
         for (int i = 0; i < path.size(); i++) {
             if (!hasEnoughArea(path.get(i))) {
+                System.out.println(i);
                 badStates.add(i);
             }
         }
@@ -454,6 +455,7 @@ public class Tester {
         List<Integer> badStates = new ArrayList<Integer>();
         for (int i = 0; i < path.size(); i++) {
             if (!fitsBounds(path.get(i))) {
+                System.out.println(i);
                 badStates.add(i);
             }
         }
@@ -508,6 +510,7 @@ public class Tester {
         List<Integer> badStates = new ArrayList<Integer>();
         for (int i = 0; i < path.size(); i++) {
             if (hasCollision(path.get(i), ps.getObstacles())) {
+                System.out.println(i);
                 badStates.add(i);
             }
         }
