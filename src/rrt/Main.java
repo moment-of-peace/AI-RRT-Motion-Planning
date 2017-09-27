@@ -194,8 +194,9 @@ public class Main {
         // TODO Auto-generated method stub
         ArrayList<Config> solution = new ArrayList<Config>();
         List<ASVConfig> sol1 = new ArrayList<ASVConfig>();
-        solution.add(initNext);
+        //solution.add(initNext);
         Config pred = initNext.predecessor;
+        
         while (pred != null) {
             solution.add(pred);
             pred = pred.predecessor;
@@ -836,7 +837,7 @@ public class Main {
         // TODO Auto-generated method stub  
         ASVConfig asv1 = cfgToASVConfig(start);
         ASVConfig asv2 = cfgToASVConfig(end);
-        return asv1.maxDistance(asv2) <= MAX_STEP;
+        return asv1.maxDistance(asv2) <= MAX_STEP - DEFAULT_MAX_ERROR;
     }
     
     private static double maxDistance(Config start, Config end) {
