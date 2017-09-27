@@ -69,6 +69,8 @@ public class Main {
         FileWriter fw2 = new FileWriter("sample2.txt");
         FileWriter fw0 = new FileWriter("sample0.txt");
         fw0.write(19998 + " " + 10 + "\n");
+        fw1.write("1000 15\n");
+        fw2.write("1000 15\n");
         //FileWriter fwr = new FileWriter("sample-raw.txt");
         
         while (!initNext.equals(goalNext)) {
@@ -106,14 +108,18 @@ public class Main {
             // find nearest configurations from both sides
             if (turn%3 == 1) {
                 nearest1 = findNearest(fromInit, sample, tester);
-                initNext = findNext2(sample, nearest1, tester, fromInit);
+                initNext = findNext(sample, nearest1, tester, fromInit);
                 nearest2 = findNearest(fromGoal, initNext, tester);//System.out.println("found nearest");
-                goalNext = findNext2(initNext, nearest2, tester, fromGoal);//System.out.println("found next");
+                goalNext = findNext(initNext, nearest2, tester, fromGoal);//System.out.println("found next");
+                fromInit.add(initNext);
+                fromGoal.add(goalNext);
             } else if (turn%3 == 2) {
                 nearest2 = findNearest(fromGoal, sample, tester);//System.out.println("found nearest");
-                goalNext = findNext2(sample, nearest2, tester, fromGoal);//System.out.println("found next");
+                goalNext = findNext(sample, nearest2, tester, fromGoal);//System.out.println("found next");
                 nearest1 = findNearest(fromInit, goalNext, tester);
-                initNext = findNext2(goalNext, nearest1, tester, fromInit);
+                initNext = findNext(goalNext, nearest1, tester, fromInit);
+                fromInit.add(initNext);
+                fromGoal.add(goalNext);
             } else {
                 //start = System.currentTimeMillis();
                 nearest1 = findNearest(fromInit, sample, tester);
@@ -121,8 +127,10 @@ public class Main {
                 //time1 = time1 + System.currentTimeMillis() - start;
                 // get the next configurations for both sides
                 //start = System.currentTimeMillis();
-                initNext = findNext2(sample, nearest1, tester, fromInit);
-                goalNext = findNext2(sample, nearest2, tester, fromGoal);//System.out.println("found next");
+                initNext = findNext2(sample, nearest1, tester, fromInit, fw1);
+                goalNext = findNext2(sample, nearest2, tester, fromGoal, fw2);//System.out.println("found next");
+                fromInit.add(initNext);
+                fromGoal.add(goalNext);
                 
             }
             
@@ -136,13 +144,13 @@ public class Main {
             //time2 = time2 + System.currentTimeMillis() - start;
             //if (initNext != nearest1 && goalNext != nearest2) total++;
             if (total%500 == 0) {
-                turn++;
+                //turn++;
                 if (turn == 8) turn = 0;
                 //System.out.println("samples: " + total);
             }
             if (total%10 == 0) System.out.println("samples: " + total);
             
-            if (total == 20000) {
+            /*if (total == 20000) {
                 
                 fw1.write(fromInit.size()-1+" " + 10 + "\n");
                 fw2.write(fromGoal.size()-1+" " + 10 + "\n");
@@ -155,8 +163,11 @@ public class Main {
                 fw1.close();
                 fw2.close();
                 fw0.close();
-            }
+            }*/
         }
+        fw0.close();
+        fw1.close();
+        fw2.close();
         System.out.println("finished, total samples: " + total);
         //record the whole path between initial and goal
         FileWriter fw = new FileWriter(outputName);
@@ -698,33 +709,35 @@ public class Main {
         }
     }
     // version 2 of findNext
-    private static Config findNext2(Config end, Config start, Test tester, HashSet<Config> cfgSet) {
+    private static Config findNext2(Config end, Config start, Test tester, HashSet<Config> cfgSet, FileWriter fw) throws IOException {
         int num = 0;
-        Config previous = start;
+        //Config previous = start;
         Config x;
         //Config x_temp = start;
         Config y = start;
         Config y_temp = start;
         while (true) {
             num++;
-            x = stepMove(y, end, previous, tester, cfgSet, 0);
-            y = stepMove(x, end, previous, tester, cfgSet, 1);
+            x = stepMove(y, end, tester, fw, cfgSet, 0);
+            printPosition(cfgToASVConfig(x), fw);
+            y = stepMove(x, end, tester, fw, cfgSet, 1);
+            printPosition(cfgToASVConfig(y), fw);
             if (x.equals(y_temp) && y.equals(x)) {
-                Config result = new Config(y.coords, previous);
-                cfgSet.add(result);
+                Config result = new Config(y.coords, start);
+                //cfgSet.add(result);
                 return result;
             } else if (y.equals(end)) {
-                Config result = new Config(y.coords, previous);
-                cfgSet.add(result);
+                Config result = new Config(y.coords, start);
+                //cfgSet.add(result);
                 return result;
             }
             /* record intermediate c-space states every 100 times to reduce the time
             spent on finding the nearest state */
-            if (num%100 == 0) {
+            /*if (num%100 == 0) {
                 Config result = new Config(y.coords, previous);
                 cfgSet.add(result);
                 previous = result;
-            }
+            }*/
             //x_temp = x;
             y_temp = y;
         }
@@ -733,9 +746,11 @@ public class Main {
     /**
      * move horizontally or vertically within one step size
      * @param direction: 0 and 1 means move horizontally and vertically respectively
+     * @throws IOException 
      */
-    private static Config stepMove(Config start, Config end, Config previous, Test tester, 
-            HashSet<Config> cfgSet, int direction) {
+    private static Config stepMove(Config start, Config end, Test tester, FileWriter fw,
+            HashSet<Config> cfgSet, int direction) throws IOException {
+        end = new Config(end.coords);
         double step = maxDistance(start, end, direction);
         // cut the distance until the step size is valid
         while (step > MAX_STEP) {
@@ -748,12 +763,14 @@ public class Main {
         } else {
             Config trans = increaseAngle(end, tester);
             if (trans != null) {
-                start.predecessor = previous;
-                cfgSet.add(start);
-                Config result = findNext2(trans, start, tester, cfgSet);
-                previous.coords = result.coords;
-                previous.predecessor = result.predecessor;
-                return previous;
+                fw.flush();
+                //start.predecessor = previous;
+                //cfgSet.add(start);
+                Config result = findNext2(trans, start, tester, cfgSet, fw);
+                //previous.coords = result.coords;
+                //previous.predecessor = result.predecessor;
+                fw.flush();
+                return result;
             }
         }
         return start;
