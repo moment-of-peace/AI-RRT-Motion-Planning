@@ -103,9 +103,11 @@ public class ASVConfig {
 	    double distance;
         for (int i = 0; i < this.getASVCount(); i++) {
             if (d == 0) {
-                distance = Math.abs(this.getPosition(i).getX() - otherState.getPosition(i).getX());
+                //distance = Math.abs(this.getPosition(i).getX() - otherState.getPosition(i).getX());
+                distance = this.getPosition(i).distance(otherState.getPosition(i).getX(), this.asvPositions.get(i).getY());
             } else {
-                distance = Math.abs(this.getPosition(i).getY() - otherState.getPosition(i).getY());
+                //distance = Math.abs(this.getPosition(i).getY() - otherState.getPosition(i).getY());
+                distance = this.getPosition(i).distance(this.asvPositions.get(i).getX(), otherState.getPosition(i).getY());
             }
             if (distance > maxDistance) {
                 maxDistance = distance;
