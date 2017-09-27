@@ -4,9 +4,12 @@ package rrt;
  */
 
 import java.awt.geom.Point2D;
+import java.awt.geom.Rectangle2D;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -871,6 +874,67 @@ public class Main {
         }
         return rects;
     }
+    
+    private static List<Obstacle> SampleSpaceV2(List<Obstacle> obs){
+        List<Obstacle> obsClone = new ArrayList<Obstacle>(obs);
+        List<List<Obstacle>> groupRects = new ArrayList<List<Obstacle>>();
+        int k = 0;
+        for(int i=0;i<obsClone.size();i++){
+        	Obstacle current = obs.get(i);
+        	obsClone.remove(i);
+        	groupRects.get(k).add(current);
+        	for (int j=0;j<obsClone.size();j++){
+        		Obstacle temp = obs.get(j);
+        		if(current.getRect().getX()==temp.getRect().getX()){
+        			groupRects.get(k).add(temp);
+        			obsClone.remove(j);
+        		}
+        	}
+        	k++;
+        }
+        
+        List<Obstacle> sampleSpace = new ArrayList<Obstacle>();
+        for(int l=0;l<groupRects.size();l++){
+        	List<Obstacle> currentGroup = groupRects.get(l);
+        	if(groupRects.size()<2) groupRects.remove(l);
+        	else {
+        		Collections.sort(groupRects.get(l),obstacleComparator);
+        		
+        		//corridor with axis
+        		Rectangle2D startOb = currentGroup.get(0).getRect();
+        		Rectangle2D endOb = currentGroup.get(groupRects.size()-1).getRect();
+        		
+        		if(startOb.getMinY()!=0){
+        			Obstacle rect = new Obstacle
+        					(startOb.getX(), 0,startOb.getWidth(),startOb.getMinY());
+        			sampleSpace.add(rect);
+        		}
+        		
+        		if(endOb.getMaxY()!=0){
+        			Obstacle rect = new Obstacle
+        					(endOb.getX(), 1,endOb.getWidth(),endOb.getMaxY());
+        			sampleSpace.add(rect);
+        		}
+        		//end of it
+        		
+        		for(int m=0, n=0;m<currentGroup.size()-1;m++, n++){
+        			Rectangle2D r1 = currentGroup.get(m).getRect();
+        			Rectangle2D r2 = currentGroup.get(n).getRect();
+        			Obstacle rect = new Obstacle
+        					(r1.getX(), r1.getMaxY(),r1.getWidth(),r2.getMinY()-r1.getMaxY());
+        			sampleSpace.add(rect);
+        		}
+        	}
+        }
+        return sampleSpace;        
+    }
+    
+    static Comparator<Obstacle> obstacleComparator = new Comparator<Obstacle>(){
+		@Override
+		public int compare(Obstacle o1, Obstacle o2) {
+			return Double.compare(o1.getRect().getMaxY(), o2.getRect().getMinY());
+		}
+    };
     
     private static void getSinCor(double[] position, Test tester) {
         Random randP = new Random();
