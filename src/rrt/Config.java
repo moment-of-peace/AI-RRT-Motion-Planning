@@ -27,12 +27,24 @@ public class Config {
             double[] coords2 = ((Config)config).coords;
             if (this.coords.length != coords2.length) return false;
             for (int i = 0; i < coords2.length; i++) {
-                if (this.coords[i] != coords2[i]) return false;
+                if (Math.abs(this.coords[i] - coords2[i]) > 0.00001) return false;
             }
             return true;
         } else {
             return false;
         }
+    }
+
+    public boolean isSame(Config cfg) {
+        double[] coords2 = cfg.coords;
+        double diff = 0;
+        for (int i = 0; i < 2; i++) {
+            diff += Math.abs(this.coords[i] - coords2[i]);
+        }
+        if (diff < 2 * 0.00001) {
+            return true;
+        }
+        return false;
     }
     
 }

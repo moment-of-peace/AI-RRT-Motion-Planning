@@ -175,6 +175,7 @@ public class Tester {
         for (int i = 1; i < path.size(); i++) {
             ASVConfig nextState = path.get(i);
             if (!isValidStep(state, nextState)) {
+                System.out.println(i);
                 badSteps.add(i - 1);
             }
             state = nextState;
