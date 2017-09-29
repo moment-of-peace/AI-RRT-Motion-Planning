@@ -27,7 +27,7 @@ public class Main {
     private static int clockwise;
     private static int total = 0;
     private static int recurrent = 0;
-    //private static int recurrentflag = 6;
+    private static int recurrentflag = 0;
     public static void main(String[] args) throws IOException {
         // load problem from a file
         String srcFile = args[0];
@@ -50,14 +50,14 @@ public class Main {
         // get initial and goal coordinates in c space
         Config initConfig = asvConfigToCfg(tester.ps.getInitialState(),tester);
         Config goalConfig = asvConfigToCfg(tester.ps.getGoalState(),tester);
-        for (double d: initConfig.coords) {
+        /*for (double d: initConfig.coords) {
             System.out.println(d);
         }
         System.out.println("");
         for (double d: goalConfig.coords) {
             System.out.println(d);
         }
-        System.out.println("");
+        System.out.println("");*/
         // clockwise or anti-clockwise
         if (initConfig.coords.length > 3 && initConfig.coords[3] < 0) {
             clockwise = -1;
@@ -82,8 +82,10 @@ public class Main {
         FileWriter fw2 = new FileWriter("sample2.txt");
         FileWriter fw0 = new FileWriter("sample0.txt");
         fw0.write(998 + " " + 10 + "\n");
-        //fw1.write("1000 15\n");
-        //fw2.write("1000 15\n");
+        FileWriter fw1x = new FileWriter("sample1x.txt");
+        FileWriter fw2x = new FileWriter("sample2x.txt");
+        fw1x.write("1000 150\n");
+        fw2x.write("1000 150\n");
         //FileWriter fwr = new FileWriter("sample-raw.txt");
         
         while (!initNext.equals(goalNext)) {
@@ -117,9 +119,9 @@ public class Main {
                     asv = cfgToASVConfig(sample);
                 }
             }
-            
+            printPosition(cfgToASVConfig(sample), fw0);
             if (total < 1000) {
-                printPosition(cfgToASVConfig(sample), fw0);
+                //printPosition(cfgToASVConfig(sample), fw0);
                 //fw0.flush();
                 /*for (double d: sample.coords) {
                     fwr.write(d + " ");
@@ -130,18 +132,18 @@ public class Main {
             if (turn%3 == 1) {
             	
                 nearest1 = findNearest(fromInit, sample, tester);
-                initNext = findNext2(sample, nearest1, tester, fromInit,1,null);
+                initNext = findNext2(sample, nearest1, tester, fromInit,1,null, fw1x);
                 nearest2 = findNearest(fromGoal, initNext, tester);//System.out.println("found nearest");
-                goalNext = findNext2(initNext, nearest2, tester, fromGoal,2,null);//System.out.println("found next");
+                goalNext = findNext2(initNext, nearest2, tester, fromGoal,2,null, fw2x);//System.out.println("found next");
                 fromInit.add(initNext);
                 fromGoal.add(goalNext);
                 
             } else if (turn%3 == 2) {
             	
                 nearest2 = findNearest(fromGoal, sample, tester);//System.out.println("found nearest");
-                goalNext = findNext2(sample, nearest2, tester, fromGoal,2,null);//System.out.println("found next");
+                goalNext = findNext2(sample, nearest2, tester, fromGoal,2,null,fw2x);//System.out.println("found next");
                 nearest1 = findNearest(fromInit, goalNext, tester);
-                initNext = findNext2(goalNext, nearest1, tester, fromInit,1,null);
+                initNext = findNext2(goalNext, nearest1, tester, fromInit,1,null,fw1x);
                 fromInit.add(initNext);
                 fromGoal.add(goalNext);
             } else {
@@ -152,8 +154,8 @@ public class Main {
                 //time1 = time1 + System.currentTimeMillis() - start;
                 // get the next configurations for both sides
                 //start = System.currentTimeMillis();
-                initNext = findNext2(sample, nearest1, tester, fromInit,1,null);
-                goalNext = findNext2(sample, nearest2, tester, fromGoal,2,null);//System.out.println("found next");
+                initNext = findNext2(sample, nearest1, tester, fromInit,1,null,fw1x);
+                goalNext = findNext2(sample, nearest2, tester, fromGoal,2,null,fw2x);//System.out.println("found next");
                 fromInit.add(initNext);
                 fromGoal.add(goalNext);
                 
@@ -175,7 +177,7 @@ public class Main {
             }
             //if (total%10 == 0) System.out.println("samples: " + total);
             
-            if (total == 1000) {
+            /*if (total == 1000) {
                 
                 fw1.write(fromInit.size()-1+" " + 10 + "\n");
                 fw2.write(fromGoal.size()-1+" " + 10 + "\n");
@@ -188,15 +190,26 @@ public class Main {
                 fw1.close();
                 fw2.close();
                 fw0.close();
-            }
+            }*/
         }
-        fw0.close();
+        fw1.write(fromInit.size()-1+" " + 10 + "\n");
+        fw2.write(fromGoal.size()-1+" " + 10 + "\n");
+        for (Config c: fromInit) {
+            printPosition(cfgToASVConfig(c), fw1);
+        }
+        for (Config c: fromGoal) {
+            printPosition(cfgToASVConfig(c), fw2);
+        }
         fw1.close();
         fw2.close();
-        System.out.println("finished, total samples: " + total);
+        fw0.close();
+        fw1x.close();
+        fw2x.close();
+        System.out.println("finished, total samples: " + total + " " + recurrentflag);
         //record the whole path between initial and goal
         FileWriter fw = new FileWriter(outputName);
         ArrayList<ASVConfig> solution = new ArrayList<ASVConfig>();
+        //ArrayList<ASVConfig> solution2 = new ArrayList<ASVConfig>();
         solution.add(tester.ps.getInitialState());
         solution.addAll(getSol1(initNext,tester));
         solution.addAll(getSol2(goalNext,tester));
@@ -241,7 +254,7 @@ public class Main {
                 step = maxDistance(start, result);
             }*/
             //sol1.add(cfgToASVConfig(start));
-            //findNext2(result, start, tester, null, 1, sol1);
+            //findNext2(result, start, tester, null, 1, sol1,null);
             sol1.add(cfgToASVConfig(result));
         }
         return sol1;
@@ -275,7 +288,7 @@ public class Main {
                 step = maxDistance(start, result);
             }*/
             //sol2.add(cfgToASVConfig(start));
-            //findNext2(result, start, tester, null, 1, sol2);
+            //findNext2(result, start, tester, null, 1, sol2,null);
             sol2.add(cfgToASVConfig(result));
         }
         ArrayList<ASVConfig> reverse = new ArrayList<ASVConfig>();
@@ -638,7 +651,7 @@ public class Main {
                 }
             }
         }
-        return - dist;
+        return -dist;
     }
     
     /**
@@ -740,7 +753,7 @@ public class Main {
         }
     }
     // version 2 of findNext
-    private static Config findNext2(Config end, Config start, Test tester, HashSet<Config> cfgSet, int d, ArrayList<ASVConfig> asvs) throws IOException {
+    private static Config findNext2(Config end, Config start, Test tester, HashSet<Config> cfgSet, int d, ArrayList<ASVConfig> asvs, FileWriter fw) throws IOException {
         /*recurrent++;
         if (recurrent > 5) {
             recurrent = 0;
@@ -754,27 +767,30 @@ public class Main {
         //Config x_temp = start;
         //Config y = start;
         Config y_temp = start;
+        Config result;
         while (true) {
             
             num++;
             /*if (y_temp.coords[0] > 0.48 && y_temp.coords[0] < 0.664 && d == 1) {
                 num++;
             }*/
-            Config x = stepMove(y_temp, end, tester, cfgSet, 0,d,asvs);
-            //printPosition(cfgToASVConfig(x), fw);
-            Config y = stepMove(x, end, tester, cfgSet, 1,d,asvs);
-            //printPosition(cfgToASVConfig(y), fw);
+            Config x = stepMove(y_temp, end, tester, cfgSet, 0,d,asvs,fw);
+            //x.predecessor = y_temp;
+            if (fw != null) printPosition(cfgToASVConfig(x), fw);
+            Config y = stepMove(x, end, tester, cfgSet, 1,d,asvs,fw);
+            //y.predecessor = x;
+            if (fw != null) printPosition(cfgToASVConfig(y), fw);
             if (asvs != null) {
                 asvs.add(cfgToASVConfig(x));
                 asvs.add(cfgToASVConfig(y));
             }
             if (x.equals(y_temp) && y.equals(x)) {
-                Config result = new Config(y.coords, start);
+                result = new Config(y.coords, y.predecessor);
                 //cfgSet.add(result);
                 //System.out.println("findnext e1");
                 return result;
             } else if (y.equals(end)) {
-                Config result = new Config(y.coords, start);
+                result = new Config(y.coords, y.predecessor);
                 //cfgSet.add(result);
                 //System.out.println("findnext e2");
                 return result;
@@ -789,9 +805,13 @@ public class Main {
             //x_temp = x;
             if (y.isSame(y_temp)) {
                 same++;
+                if (same == 1) result = y;
+            } else {
+                same = 0;
             }
             if (same == 10) {
-                return new Config(y.coords, start);
+                
+                return new Config(y.coords, y.predecessor);
             }
             y_temp = y;
         }
@@ -802,7 +822,7 @@ public class Main {
      * @param direction: 0 and 1 means move horizontally and vertically respectively
      * @throws IOException 
      */
-    private static Config stepMove(Config start, Config goal, Test tester, HashSet<Config> cfgSet, int direction, int d, ArrayList<ASVConfig> asvs) throws IOException {
+    private static Config stepMove(Config start, Config goal, Test tester, HashSet<Config> cfgSet, int direction, int d, ArrayList<ASVConfig> asvs, FileWriter fw) throws IOException {
         //System.out.println("move s " + direction);
          Config end = new Config(goal.coords);
         //double step = maxDistance(start, end, direction);
@@ -819,6 +839,7 @@ public class Main {
         ASVConfig asv = cfgToASVConfig(end);
         if (cSpaceCollisionCheck(asv, tester)) {
             //System.out.println("move e1");
+            end.predecessor = start;
             return end;
         } else {
             Config trans = increaseAngle(end, tester);
@@ -832,7 +853,8 @@ public class Main {
                 recurrent++;
                 Config result;
                 if (recurrent < 2) {
-                    result = findNext2(trans, start, tester, cfgSet,d,asvs);
+                    //recurrentflag++;
+                    result = findNext2(trans, start, tester, cfgSet,d,asvs,fw);
                 } else {
                     result = start;
                 }
