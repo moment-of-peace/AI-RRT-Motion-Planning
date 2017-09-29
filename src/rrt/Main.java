@@ -91,11 +91,17 @@ public class Main {
             if (obsNum != 2 || turn < 3) {
                 sample = getRandomPoint(dimensions, angleRange, tester);
                 ASVConfig asv = cfgToASVConfig(sample);
+                
                 while(!cSpaceCollisionCheck1(asv, tester)) {
+                	
                     sample = getRandomPoint(dimensions, angleRange, tester);
+                    
                     asv = cfgToASVConfig(sample);
+                    
                 }//System.out.println("got random");
+                
             } else if (turn < 6){
+            	
                 sample = getRandomPoint2(dimensions, angleRange, tester);
                 ASVConfig asv = cfgToASVConfig(sample);
                 while(!cSpaceCollisionCheck1(asv, tester)) {
@@ -103,6 +109,7 @@ public class Main {
                     asv = cfgToASVConfig(sample);
                 }//System.out.println("got random");
             } else {
+            	
                 sample = getRandomPoint3(dimensions, angleRange, tester);
                 ASVConfig asv = cfgToASVConfig(sample);
                 while(!cSpaceCollisionCheck1(asv, tester)) {
@@ -121,13 +128,16 @@ public class Main {
             }
             // find nearest configurations from both sides
             if (turn%3 == 1) {
+            	
                 nearest1 = findNearest(fromInit, sample, tester);
                 initNext = findNext2(sample, nearest1, tester, fromInit,1,null);
                 nearest2 = findNearest(fromGoal, initNext, tester);//System.out.println("found nearest");
                 goalNext = findNext2(initNext, nearest2, tester, fromGoal,2,null);//System.out.println("found next");
                 fromInit.add(initNext);
                 fromGoal.add(goalNext);
+                
             } else if (turn%3 == 2) {
+            	
                 nearest2 = findNearest(fromGoal, sample, tester);//System.out.println("found nearest");
                 goalNext = findNext2(sample, nearest2, tester, fromGoal,2,null);//System.out.println("found next");
                 nearest1 = findNearest(fromInit, goalNext, tester);
@@ -135,6 +145,7 @@ public class Main {
                 fromInit.add(initNext);
                 fromGoal.add(goalNext);
             } else {
+            	
                 //start = System.currentTimeMillis();
                 nearest1 = findNearest(fromInit, sample, tester);
                 nearest2 = findNearest(fromGoal, sample, tester);//System.out.println("found nearest");
@@ -744,7 +755,7 @@ public class Main {
         //Config y = start;
         Config y_temp = start;
         while (true) {
-            //System.out.println("findnext while");
+            
             num++;
             /*if (y_temp.coords[0] > 0.48 && y_temp.coords[0] < 0.664 && d == 1) {
                 num++;
@@ -799,6 +810,7 @@ public class Main {
         // cut the distance until the step size is valid
         while (step > MAX_STEP) {
             //System.out.println("move while s");
+        	
             end = cutDist2(step, start, end, direction);
             //step = maxDistance(start, end, direction);
             step = maxDistance(start, end);
