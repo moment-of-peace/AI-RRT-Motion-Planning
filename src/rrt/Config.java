@@ -1,7 +1,7 @@
 package rrt;
 
 /**
- * represent a configuration in c space
+ * represent a configuration state in c space
  */
 public class Config {
     protected double[] coords;   // the coordinates of this configuration in c space
@@ -34,7 +34,9 @@ public class Config {
             return false;
         }
     }
-
+    /*
+     * return true if two c-space states have similar start point
+     */
     public boolean isSame(Config cfg) {
         double[] coords2 = cfg.coords;
         double diff = 0;
@@ -46,5 +48,4 @@ public class Config {
         }
         return false;
     }
-    
 }
